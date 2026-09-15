@@ -1,8 +1,17 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-function Card({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div className={cn('rounded-lg border bg-card text-card-foreground shadow-xs', className)} {...props} />;
+function Card({ className, interactive, ...props }: React.ComponentProps<'div'> & { interactive?: boolean }) {
+  return (
+    <div
+      className={cn(
+        'rounded-lg border bg-card text-card-foreground shadow-sm shadow-black/[0.03]',
+        interactive && 'transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/[0.06]',
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return <div className={cn('flex flex-col gap-1 p-5 pb-3', className)} {...props} />;

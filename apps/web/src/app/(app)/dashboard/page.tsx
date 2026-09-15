@@ -1,5 +1,5 @@
 'use client';
-import { DOCUMENT_TYPE_LABELS, formatBRL, formatDate, formatQuoteNumber, QUOTE_STATUS_LABELS, type DocumentType } from '@insurance/shared';
+import { DOCUMENT_TYPE_LABELS, formatBRL, formatDate, formatQuoteNumber, percentageDifference, QUOTE_STATUS_LABELS, type DocumentType } from '@insurance/shared';
 import { AlertTriangle, CheckSquare, FileText, FolderOpen, Medal, Send, ThumbsDown, Trophy, Clock, Target, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -7,13 +7,14 @@ import { PageHeader } from '@/components/layout/page-header';
 import { AuditTimeline } from '@/components/domain/audit-timeline';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TrendBadge } from '@/components/ui/trend-badge';
 import { useMe } from '@/lib/queries/auth';
 import { useActivity, useDashboard } from '@/lib/queries/dashboard';
 import { cn } from '@/lib/utils';
 
 function Stat({ label, value, icon: Icon, href, tone }: { label: string; value: number; icon: React.ElementType; href: string; tone?: 'ok' | 'warn' | 'bad' }) {
   return (
-    <Link href={href} className="rounded-lg border bg-card p-4 transition-colors hover:bg-muted/40">
+    <Link href={href} className="rounded-lg border bg-card p-4 shadow-sm shadow-black/[0.03] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/[0.06]">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
         <Icon className={cn('size-4', tone === 'ok' ? 'text-emerald-600' : tone === 'warn' ? 'text-amber-600' : tone === 'bad' ? 'text-red-600' : 'text-muted-foreground')} />
@@ -32,6 +33,9 @@ export default function DashboardPage() {
   const f = data.financial;
   const chart = data.byStatus.filter((s) => !['LOST', 'CANCELLED'].includes(s.status) || s.count > 0).map((s) => ({ name: QUOTE_STATUS_LABELS[s.status], count: s.count }));
   const evolutionChart = data.monthlyEvolution.map((m) => ({ name: new Date(`${m.month}-02`).toLocaleDateString('pt-BR', { month: 'short' }), premium: Number(m.wonPremium) }));
+  // Tendência real: mês atual vs. anterior, a partir do histórico já calculado no backend (sem valor inventado).
+  const [prevMonth, currentMonth] = data.monthlyEvolution.slice(-2);
+  const premiumTrend = prevMonth && currentMonth ? percentageDifference(currentMonth.wonPremium, prevMonth.wonPremium) : null;
   return (
     <>
       <PageHeader title={`Olá, ${me?.name.split(' ')[0] ?? ''}`} description="Visão geral da operação de cotação." />
@@ -48,8 +52,11 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="p-4">
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wide"><Trophy className="size-3.5 text-emerald-600" /> Prêmio fechado no mês</p>
-            <p className="mt-2 text-2xl font-semibold">{formatBRL(f.wonPremiumMonth)}</p>
-            <p className="text-xs text-muted-foreground">Comissão realizada: {formatBRL(f.wonCommissionMonth)}</p>
+            <div className="mt-2 flex items-center gap-2">
+              <p className="text-2xl font-semibold">{formatBRL(f.wonPremiumMonth)}</p>
+              <TrendBadge percentage={premiumTrend === null ? null : Number(premiumTrend)} />
+            </div>
+            <p className="text-xs text-muted-foreground">Comissão realizada: {formatBRL(f.wonCommissionMonth)}{prevMonth ? ` · mês anterior: ${formatBRL(prevMonth.wonPremium)}` : ''}</p>
           </CardContent>
         </Card>
         <Card>

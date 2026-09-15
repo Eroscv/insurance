@@ -389,6 +389,14 @@ Melhorias de UX pedidas pelo usuário após revisão do produto.
 - **Modo escuro**: paleta `.dark` completa em `globals.css` (Tailwind v4 `@custom-variant dark`), toggle de 3 estados (Claro/Escuro/Sistema) em `components/layout/theme-toggle.tsx`, persistido em `localStorage` e aplicado antes da hidratação via script inline em `layout.tsx` (evita flash do tema errado). Badges e alertas com cores fixas (`bg-emerald-50`, `bg-amber-50` etc.) ganharam variantes `dark:` para manter contraste.
 - **Ordenação por cabeçalho**: `components/ui/sortable-table-head.tsx` (genérico, reaproveita o estado `sort` "campo:direção" já usado pelas listagens). Aplicado em Clientes, Cotações, Usuários, Documentos e Seguradoras, substituindo os `Select` de ordenação onde redundantes.
 
+## Fase 11 (incremental, pós-MVP): tipografia, elevação e tendência nos KPIs
+
+Melhorias visuais pedidas pelo usuário para dar aspecto mais profissional/moderno.
+
+- **Tipografia**: fonte Inter carregada via `next/font/google` (self-hosted, sem chamada externa em runtime), aplicada como `--font-sans`; títulos (`h1`–`h3`) com `tracking-tight`.
+- **Elevação de cards**: `Card` ganhou sombra base mais perceptível (`shadow-sm`) e uma prop `interactive` opcional para lift + sombra no hover; os cards de KPI do dashboard (que já eram links) ganharam o mesmo tratamento.
+- **Tendência nos KPIs**: `TrendBadge` (seta + %) aplicado apenas onde há base histórica real — "Prêmio fechado no mês" compara com o mês anterior usando `monthlyEvolution` (já retornado pela API) e `percentageDifference` (shared). Deliberadamente **não** adicionado aos 6 cards de contagem do topo (cotações abertas, aguardando documentos etc.): são fotografias do estado atual do pipeline, sem uma baseline histórica armazenada — mostrar uma tendência ali seria inventar dado, o que viola a regra de determinismo do produto.
+
 ## Futuro (não implementar agora)
 
 WhatsApp Business API (gerar mensagens prontas já existe como texto copiável) · e-mail SMTP real (trocar `MailerService` stub) · APIs de seguradoras (interface `InsurerGateway` por seguradora, entrada manual permanece como fallback) · importação de planilhas (`ImportJob` com etapas upload → leitura → preview → validação → erros → confirmação → importação) · webhooks de saída · gateway de pagamento/assinatura do SaaS · portal do cliente · outros tipos de seguro (tabelas `quote_<tipo>_details`).
