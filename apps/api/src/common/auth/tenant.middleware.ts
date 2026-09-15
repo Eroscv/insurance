@@ -1,5 +1,5 @@
 import { Injectable, type NestMiddleware } from '@nestjs/common';
-import { type JwtService } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 import type { NextFunction, Request, Response } from 'express';
 import { TenantContext } from '../tenant/tenant-context';
 import { ACCESS_COOKIE, type AccessTokenPayload } from './access-token';

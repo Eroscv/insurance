@@ -1,5 +1,5 @@
 import { type CanActivate, type ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
-import { type ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import type { Env } from '../../config/env';
 

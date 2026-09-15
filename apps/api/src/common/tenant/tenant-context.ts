@@ -22,3 +22,6 @@ export const TenantContext = {
     return ctx;
   },
 };
+
+/** organizationId do contexto atual (atalho para creates tipados; a extension Prisma reforça o valor). */
+export const orgId = (): string => TenantContext.require().organizationId;

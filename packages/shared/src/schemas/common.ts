@@ -81,4 +81,4 @@ export const optionalMoney = z
   .nullable()
   .optional();
 
-export const percentage = z.coerce.number().min(0).max(100);
+export const percentage = z.number().min(0).max(100);

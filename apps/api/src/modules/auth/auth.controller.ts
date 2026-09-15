@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
-import { type ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import {
@@ -14,7 +14,7 @@ import { ACCESS_COOKIE, REFRESH_COOKIE } from '../../common/auth/access-token';
 import { CurrentUser, Public, type AuthUser } from '../../common/auth/decorators';
 import { ZodValidationPipe } from '../../common/validation/zod-validation.pipe';
 import type { Env } from '../../config/env';
-import { type AuthService, type TokenPair } from './auth.service';
+import { AuthService, type TokenPair } from './auth.service';
 
 type Req = Request & { cookies?: Record<string, string> };
 

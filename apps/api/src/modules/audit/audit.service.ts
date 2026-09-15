@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { AuditAction, Prisma } from '@insurance/database';
 import { TenantContext } from '../../common/tenant/tenant-context';
-import { type PrismaService } from '../../infra/prisma/prisma.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
 
 const REDACTED_KEYS = new Set(['passwordHash', 'password', 'tokenHash', 'storageKey']);
 

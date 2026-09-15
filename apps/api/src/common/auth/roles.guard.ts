@@ -1,5 +1,5 @@
 import { type CanActivate, type ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
-import { type Reflector } from '@nestjs/core';
+import { Reflector } from '@nestjs/core';
 import type { Role } from '@insurance/database';
 import { hasPermission, type Permission } from '@insurance/shared';
 import { PERMISSION_KEY, ROLES_KEY, type AuthUser } from './decorators';

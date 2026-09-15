@@ -13,9 +13,12 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { validateEnv, type Env } from './config/env';
 import { MailerModule } from './infra/mailer/mailer.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
+import { StorageModule } from './infra/storage/storage.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -42,10 +45,13 @@ import { HealthModule } from './modules/health/health.module';
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
+    StorageModule,
     MailerModule,
     AuditModule,
     HealthModule,
     AuthModule,
+    OrganizationsModule,
+    UsersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

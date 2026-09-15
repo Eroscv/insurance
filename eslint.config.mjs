@@ -12,4 +12,9 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
     },
   },
+  {
+    // NestJS depende de classes em runtime para injeção (emitDecoratorMetadata): não converter em import type.
+    files: ['apps/api/**/*.ts'],
+    rules: { '@typescript-eslint/consistent-type-imports': 'off' },
+  },
 );

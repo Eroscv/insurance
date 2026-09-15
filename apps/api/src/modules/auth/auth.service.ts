@@ -5,8 +5,8 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { type ConfigService } from '@nestjs/config';
-import { type JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { createHash, randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
 import type { User } from '@insurance/database';
@@ -14,9 +14,9 @@ import type { LoginInput, RegisterInput } from '@insurance/shared';
 import type { AccessTokenPayload } from '../../common/auth/access-token';
 import type { AuthUser } from '../../common/auth/decorators';
 import type { Env } from '../../config/env';
-import { type MailerService } from '../../infra/mailer/mailer.service';
-import { type PrismaService } from '../../infra/prisma/prisma.service';
-import { type AuditService } from '../audit/audit.service';
+import { MailerService } from '../../infra/mailer/mailer.service';
+import { PrismaService } from '../../infra/prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 
 export interface TokenPair {
   accessToken: string;
