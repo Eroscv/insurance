@@ -116,7 +116,7 @@ src/index.ts              re-export do PrismaClient e tipos
 
 ## Jobs
 
-`@nestjs/schedule` in-process. Interface `JobRunner` (`run(name, fn)`) encapsula execução e log; trocar por BullMQ no futuro sem alterar os jobs.
+`@nestjs/schedule` in-process em `infra/scheduler/jobs.service.ts`. Cada job é um método público idempotente (dedupeKey nas notificações) que recebe `now` como parâmetro, o que permite executá-lo em testes e, no futuro, a partir de uma fila (BullMQ) sem alterar a lógica.
 
 ## Segurança
 

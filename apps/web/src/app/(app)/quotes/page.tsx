@@ -2,8 +2,9 @@
 import { formatDate, formatPlate, formatQuoteNumber } from '@insurance/shared';
 import { FileText, KanbanSquare, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import type { QuoteStatus } from '@insurance/shared';
 import { PageHeader } from '@/components/layout/page-header';
 import { QuoteFilters } from '@/components/domain/quote-filters';
 import { PriorityBadge, QuoteStatusBadge } from '@/components/domain/status-badges';
@@ -15,9 +16,10 @@ import { TableSkeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuotes, type QuoteFilters as Filters } from '@/lib/queries/quotes';
 
-export default function QuotesPage() {
+function QuotesList() {
   const router = useRouter();
-  const [filters, setFilters] = useState<Filters>({ page: 1, pageSize: 20, sort: 'createdAt:desc', open: true });
+  const initialStatus = useSearchParams().get('status') as QuoteStatus | null;
+  const [filters, setFilters] = useState<Filters>(initialStatus ? { page: 1, pageSize: 20, sort: 'createdAt:desc', status: [initialStatus] } : { page: 1, pageSize: 20, sort: 'createdAt:desc', open: true });
   const { data, isLoading } = useQuotes(filters);
   return (
     <>
@@ -84,4 +86,8 @@ export default function QuotesPage() {
       )}
     </>
   );
+}
+
+export default function QuotesPage() {
+  return <Suspense><QuotesList /></Suspense>;
 }

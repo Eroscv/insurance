@@ -32,6 +32,7 @@ import { ComparisonModule } from './modules/comparison/comparison.module';
 import { ProposalPdfModule } from './modules/proposal-pdf/proposal-pdf.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
     ProposalPdfModule,
     NotificationsModule,
     TasksModule,
+    DashboardModule,
     SchedulerModule,
   ],
   providers: [

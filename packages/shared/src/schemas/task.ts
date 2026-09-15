@@ -6,7 +6,10 @@ export const taskSchema = z.object({
   title: z.string().trim().min(2, 'Informe o título').max(150),
   description: optionalString(2000),
   priority: z.enum(PRIORITY_VALUES).default('MEDIUM'),
-  userId: uuid.optional(),
+  userId: z
+    .union([uuid, z.literal('')])
+    .transform((v) => (v === '' ? undefined : v))
+    .optional(),
   clientId: uuid.nullable().optional(),
   quoteId: uuid.nullable().optional(),
   dueDate: z
@@ -22,7 +25,10 @@ export const updateTaskStatusSchema = z.object({ status: z.enum(TASK_STATUS_VALU
 
 export const listTasksSchema = paginationSchema.extend({
   status: z.enum(TASK_STATUS_VALUES).optional(),
-  userId: uuid.optional(),
+  userId: z
+    .union([uuid, z.literal('')])
+    .transform((v) => (v === '' ? undefined : v))
+    .optional(),
   clientId: uuid.optional(),
   quoteId: uuid.optional(),
   overdue: z

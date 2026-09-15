@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { Prisma } from '@insurance/database';
+import type { Prisma, QuoteStatus } from '@insurance/database';
 import type { ProposalInput } from '@insurance/shared';
 import { orgId, TenantContext } from '../../common/tenant/tenant-context';
 import type { Env } from '../../config/env';
@@ -63,9 +63,13 @@ export class ProposalsService {
     if (quote.assignedUserId && quote.assignedUserId !== TenantContext.require().userId) {
       await this.notifications.notifyQuoteOwner(quote, { type: 'PROPOSAL_RECEIVED', title: `Proposta recebida: ${qi.insurer.name}`, body: `Cotação ${formatQuoteNumber(quote.quoteNumber)} · ${formatBRL(proposal.totalAmount.toString())}` });
     }
-    // Primeira proposta: QUOTING → WAITING_PROPOSALS → PROPOSALS_RECEIVED (efeito determinístico; máquina valida cada passo)
-    if (quote.status === 'QUOTING') await this.quotes.autoTransition(qi.quoteId, 'WAITING_PROPOSALS', 'auto:first_proposal');
-    if (quote.status === 'QUOTING' || quote.status === 'WAITING_PROPOSALS') await this.quotes.autoTransition(qi.quoteId, 'PROPOSALS_RECEIVED', 'auto:first_proposal');
+    // Primeira proposta: DATA_COMPLETE → QUOTING → WAITING_PROPOSALS → PROPOSALS_RECEIVED
+    // (efeito determinístico; a máquina de estados valida cada passo e ignora o que não for permitido)
+    const chain: QuoteStatus[] = ['QUOTING', 'WAITING_PROPOSALS', 'PROPOSALS_RECEIVED'];
+    const start = quote.status === 'DATA_COMPLETE' ? 0 : quote.status === 'QUOTING' ? 1 : quote.status === 'WAITING_PROPOSALS' ? 2 : -1;
+    for (let i = Math.max(start, 0); start >= 0 && i < chain.length; i++) {
+      if (!(await this.quotes.autoTransition(qi.quoteId, chain[i]!, 'auto:first_proposal'))) break;
+    }
     return this.get(proposal.id);
   }
 

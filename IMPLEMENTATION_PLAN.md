@@ -349,6 +349,16 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 
 Cada fase termina com `npm run lint`, `npm run typecheck`, `npm test` verdes e commit.
 
+**Status (15/09/2026): fases 0–8 implementadas.** Decisões tomadas durante a execução, além do planejado:
+
+- Postgres exposto na porta **5433** do host (5432 estava ocupada na máquina de desenvolvimento); MinIO via `quay.io/minio/minio`.
+- `consistent-type-imports` do ESLint desativado em `apps/api` (a injeção de dependências do NestJS precisa das classes em runtime).
+- Verificação de MIME por magic bytes implementada manualmente (`infra/storage/upload.ts`) em vez da dependência `file-type` (ESM-only).
+- Primeira proposta registrada em cotação `QUOTING` avança automaticamente por `WAITING_PROPOSALS` até `PROPOSALS_RECEIVED`.
+- Reatribuição de cotação: `PATCH /quotes/:id/assign` (ADMIN/MANAGER); BROKER só pode assumir cotações sem responsável.
+- Endpoint extra `GET /quotes/:id/proposal-preview` (HTML do mesmo template) para conferência antes do PDF.
+- Notificações in-app adicionais: documento/proposta recebidos por outro usuário avisam o responsável da cotação.
+
 | Fase | Entregas |
 |---|---|
 | 0 | git init, IMPLEMENTATION_PLAN.md, ARCHITECTURE.md, DATABASE.md, BUSINESS_RULES.md, README.md |

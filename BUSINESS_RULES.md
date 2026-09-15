@@ -68,7 +68,7 @@ WON → (terminal)
 ### 6.3 Efeitos automáticos (determinísticos)
 - Adicionar seguradoras a cotação em DATA_COMPLETE → QUOTING (histórico `reason: "auto:insurers_added"`).
 - Marcar consulta como REQUESTED em cotação QUOTING → WAITING_PROPOSALS quando **todas** as consultas ativas estiverem REQUESTED/WAITING.
-- Primeira proposta em cotação WAITING_PROPOSALS → PROPOSALS_RECEIVED (`auto:first_proposal`).
+- Primeira proposta em cotação DATA_COMPLETE, QUOTING ou WAITING_PROPOSALS → PROPOSALS_RECEIVED (`auto:first_proposal`, passando pelos status intermediários; registrar proposta implica que a seguradora foi consultada).
 - Gerar PDF da proposta comercial → registra documento PROPOSAL + audit SEND; **não** muda status (o corretor confirma envio manualmente).
 - WON/LOST/CANCELLED preenchem `closed_at`; reabrir limpa `closed_at`, `lost_reason`.
 - Todo movimento de status registra `quote_status_history` e `audit_logs`.
@@ -114,6 +114,10 @@ WON → (terminal)
 | Proposta recebida | registro | responsável da cotação |
 | Documento pendente | dashboard em tempo real | — |
 Idempotência por `dedupe_key` (data ou id do recurso).
+
+## 12.1 Notificações in-app disparadas por ações
+- NEW_TASK ao criar tarefa para outro usuário.
+- DOCUMENT_RECEIVED e PROPOSAL_RECEIVED para o responsável da cotação quando outro usuário registra o documento/proposta.
 
 ## 13. Auditoria
 Registrar CREATE/UPDATE/DELETE/STATUS_CHANGE/UPLOAD/SEND/SELECT_PROPOSAL/LOGIN com `old_data`/`new_data` (sem `password_hash`, sem conteúdo de arquivo). Histórico da cotação = `quote_status_history` ∪ `audit_logs` da cotação e filhos, ordenado por data.
