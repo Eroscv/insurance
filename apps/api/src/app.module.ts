@@ -14,6 +14,7 @@ import { validateEnv, type Env } from './config/env';
 import { MailerModule } from './infra/mailer/mailer.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { StorageModule } from './infra/storage/storage.module';
+import { PdfModule } from './infra/pdf/pdf.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
@@ -26,6 +27,8 @@ import { QuotesModule } from './modules/quotes/quotes.module';
 import { InsurersModule } from './modules/insurers/insurers.module';
 import { QuoteInsurersModule } from './modules/quote-insurers/quote-insurers.module';
 import { ProposalsModule } from './modules/proposals/proposals.module';
+import { ComparisonModule } from './modules/comparison/comparison.module';
+import { ProposalPdfModule } from './modules/proposal-pdf/proposal-pdf.module';
 
 @Module({
   imports: [
@@ -53,6 +56,7 @@ import { ProposalsModule } from './modules/proposals/proposals.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     StorageModule,
+    PdfModule,
     MailerModule,
     AuditModule,
     HealthModule,
@@ -66,6 +70,8 @@ import { ProposalsModule } from './modules/proposals/proposals.module';
     InsurersModule,
     QuoteInsurersModule,
     ProposalsModule,
+    ComparisonModule,
+    ProposalPdfModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

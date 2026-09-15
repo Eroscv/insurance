@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Proposta comercial {{quote.number}}</title>
+<style>/* {{css}} */</style>
+</head>
+<body>
+  <section class="cover">
+    {{#if organization.logoDataUrl}}<img src="{{organization.logoDataUrl}}" alt="" />{{/if}}
+    <h1>Proposta comercial de seguro</h1>
+    <div class="subtitle">Seguro {{quote.insuranceTypeLabel}} · Cotação {{quote.number}} · emitida em {{date generatedAt}}</div>
+    <div class="org">
+      <strong>{{organization.name}}</strong>{{#if organization.legalName}} · {{organization.legalName}}{{/if}}<br />
+      {{#if organization.documentFormatted}}CNPJ {{organization.documentFormatted}} · {{/if}}{{#if organization.phoneFormatted}}{{organization.phoneFormatted}} · {{/if}}{{organization.email}}
+    </div>
+  </section>
+
+  <h2>Dados do cliente</h2>
+  <table class="kv">
+    <tr><td>Nome</td><td>{{client.name}}</td></tr>
+    <tr><td>CPF/CNPJ</td><td>{{client.documentFormatted}}</td></tr>
+    {{#if client.phoneFormatted}}<tr><td>Telefone</td><td>{{client.phoneFormatted}}</td></tr>{{/if}}
+    {{#if client.email}}<tr><td>E-mail</td><td>{{client.email}}</td></tr>{{/if}}
+    {{#if client.address}}<tr><td>Endereço</td><td>{{client.address}}</td></tr>{{/if}}
+  </table>
+
+  {{#if vehicle}}
+  <h2>Dados do veículo</h2>
+  <table class="kv">
+    <tr><td>Veículo</td><td>{{vehicle.brand}} {{vehicle.model}}{{#if vehicle.version}} {{vehicle.version}}{{/if}}</td></tr>
+    <tr><td>Ano</td><td>{{vehicle.manufacturingYear}}/{{vehicle.modelYear}}</td></tr>
+    {{#if vehicle.plateFormatted}}<tr><td>Placa</td><td>{{vehicle.plateFormatted}}</td></tr>{{/if}}
+    {{#if vehicle.chassis}}<tr><td>Chassi</td><td>{{vehicle.chassis}}</td></tr>{{/if}}
+    {{#if vehicle.fuelLabel}}<tr><td>Combustível</td><td>{{vehicle.fuelLabel}}</td></tr>{{/if}}
+    {{#if vehicle.zeroKm}}<tr><td>Zero km</td><td>Sim</td></tr>{{/if}}
+  </table>
+  {{/if}}
+
+  <h2>Seguradora</h2>
+  <table class="kv">
+    <tr><td>Seguradora</td><td><strong>{{proposal.insurerName}}</strong></td></tr>
+    {{#if proposal.proposalNumber}}<tr><td>Nº da proposta</td><td>{{proposal.proposalNumber}}</td></tr>{{/if}}
+  </table>
+
+  <h2>Coberturas</h2>
+  {{#if proposal.coverages.length}}
+  <table>
+    <thead><tr><th>Cobertura</th><th>Importância segurada</th><th>Incluída</th></tr></thead>
+    <tbody>
+    {{#each proposal.coverages}}
+      <tr><td>{{name}}{{#if notes}} <span class="muted">— {{notes}}</span>{{/if}}</td><td>{{brl insuredAmount}}</td><td><span class="badge {{#if included}}yes{{else}}no{{/if}}">{{yesno included}}</span></td></tr>
+    {{/each}}
+    </tbody>
+  </table>
+  {{else}}<p class="muted">Conforme condições gerais da seguradora.</p>{{/if}}
+
+  <h2>Assistências</h2>
+  {{#if proposal.assistances.length}}
+  <table>
+    <thead><tr><th>Assistência</th><th>Incluída</th></tr></thead>
+    <tbody>
+    {{#each proposal.assistances}}
+      <tr><td>{{name}}{{#if description}} <span class="muted">— {{description}}</span>{{/if}}</td><td><span class="badge {{#if included}}yes{{else}}no{{/if}}">{{yesno included}}</span></td></tr>
+    {{/each}}
+    </tbody>
+  </table>
+  {{else}}<p class="muted">Conforme condições gerais da seguradora.</p>{{/if}}
+
+  <h2>Franquia</h2>
+  <table class="kv">
+    <tr><td>Valor</td><td>{{brl proposal.deductibleAmount}}</td></tr>
+    {{#if proposal.deductibleTypeLabel}}<tr><td>Tipo</td><td>{{proposal.deductibleTypeLabel}}</td></tr>{{/if}}
+  </table>
+
+  <h2>Valores e forma de pagamento</h2>
+  <div class="grid">
+    <div class="box">
+      <div class="muted">Prêmio total</div>
+      <div class="total">{{brl proposal.totalAmount}}</div>
+    </div>
+    <div class="box">
+      <div class="muted">Forma de pagamento</div>
+      <div>{{#if proposal.isInstallment}}{{proposal.installments}}x de {{brl proposal.installmentAmount}}{{#if proposal.installmentTotal}} (total parcelado {{brl proposal.installmentTotal}}){{/if}}{{else}}À vista{{/if}}</div>
+      {{#if proposal.firstInstallment}}<div class="muted">1ª parcela: {{brl proposal.firstInstallment}}</div>{{/if}}
+    </div>
+  </div>
+
+  <h2>Validade</h2>
+  <p>Esta proposta é válida até <strong>{{date proposal.validityDate}}</strong>, sujeita a alteração pela seguradora.</p>
+
+  {{#if proposal.notes}}
+  <h2>Observações</h2>
+  <p>{{proposal.notes}}</p>
+  {{/if}}
+
+  <h2>Contato</h2>
+  <p><strong>{{broker.name}}</strong>{{#if broker.phoneFormatted}} · {{broker.phoneFormatted}}{{/if}} · {{broker.email}}<br /><span class="muted">{{organization.name}}</span></p>
+
+  <div class="footer">
+    Esta proposta está sujeita às condições da seguradora e não representa, isoladamente, emissão da apólice.
+    {{#if organization.footerText}}<br />{{organization.footerText}}{{/if}}
+  </div>
+</body>
+</html>
