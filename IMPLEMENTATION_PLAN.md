@@ -397,6 +397,15 @@ Melhorias visuais pedidas pelo usuário para dar aspecto mais profissional/moder
 - **Elevação de cards**: `Card` ganhou sombra base mais perceptível (`shadow-sm`) e uma prop `interactive` opcional para lift + sombra no hover; os cards de KPI do dashboard (que já eram links) ganharam o mesmo tratamento.
 - **Tendência nos KPIs**: `TrendBadge` (seta + %) aplicado apenas onde há base histórica real — "Prêmio fechado no mês" compara com o mês anterior usando `monthlyEvolution` (já retornado pela API) e `percentageDifference` (shared). Deliberadamente **não** adicionado aos 6 cards de contagem do topo (cotações abertas, aguardando documentos etc.): são fotografias do estado atual do pipeline, sem uma baseline histórica armazenada — mostrar uma tendência ali seria inventar dado, o que viola a regra de determinismo do produto.
 
+## Fase 12 (incremental, pós-MVP): gráficos do dashboard com suporte a modo escuro
+
+Os dois gráficos Recharts ("Cotações por status" e "Evolução do prêmio fechado") usavam cores
+fixas em hexadecimal/oklch, corretas apenas no tema claro. Substituídas por `var(--border)`,
+`var(--muted-foreground)`, `var(--primary)`, `var(--popover)` etc. — os mesmos tokens de
+`globals.css` usados pelo resto da UI — nos eixos, grid, barras, linha, cursor de hover e
+tooltip. Como são propriedades SVG/inline style, o navegador resolve o `var()` no momento da
+pintura, então os gráficos acompanham a troca de tema automaticamente, sem re-render em JS.
+
 ## Futuro (não implementar agora)
 
 WhatsApp Business API (gerar mensagens prontas já existe como texto copiável) · e-mail SMTP real (trocar `MailerService` stub) · APIs de seguradoras (interface `InsurerGateway` por seguradora, entrada manual permanece como fallback) · importação de planilhas (`ImportJob` com etapas upload → leitura → preview → validação → erros → confirmação → importação) · webhooks de saída · gateway de pagamento/assinatura do SaaS · portal do cliente · outros tipos de seguro (tabelas `quote_<tipo>_details`).

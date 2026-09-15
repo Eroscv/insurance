@@ -12,6 +12,13 @@ import { useMe } from '@/lib/queries/auth';
 import { useActivity, useDashboard } from '@/lib/queries/dashboard';
 import { cn } from '@/lib/utils';
 
+const CHART_AXIS = { fontSize: 11, fill: 'var(--muted-foreground)' };
+const CHART_TOOLTIP_STYLE = {
+  contentStyle: { backgroundColor: 'var(--popover)', borderColor: 'var(--border)', borderRadius: 8, color: 'var(--popover-foreground)', fontSize: 12 },
+  labelStyle: { color: 'var(--popover-foreground)' },
+  itemStyle: { color: 'var(--popover-foreground)' },
+};
+
 function Stat({ label, value, icon: Icon, href, tone }: { label: string; value: number; icon: React.ElementType; href: string; tone?: 'ok' | 'warn' | 'bad' }) {
   return (
     <Link href={href} className="rounded-lg border bg-card p-4 shadow-sm shadow-black/[0.03] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/[0.06]">
@@ -91,11 +98,11 @@ export default function DashboardPage() {
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chart} margin={{ left: -20, right: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={60} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip cursor={{ fill: '#f3f4f6' }} formatter={(v) => [v, 'Cotações']} />
-                  <Bar dataKey="count" fill="oklch(0.45 0.16 255)" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                  <XAxis dataKey="name" tick={{ ...CHART_AXIS, fontSize: 10 }} axisLine={{ stroke: 'var(--border)' }} tickLine={{ stroke: 'var(--border)' }} interval={0} angle={-25} textAnchor="end" height={60} />
+                  <YAxis allowDecimals={false} tick={CHART_AXIS} axisLine={{ stroke: 'var(--border)' }} tickLine={{ stroke: 'var(--border)' }} />
+                  <Tooltip cursor={{ fill: 'var(--muted)' }} formatter={(v) => [v, 'Cotações']} {...CHART_TOOLTIP_STYLE} />
+                  <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -140,11 +147,11 @@ export default function DashboardPage() {
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={evolutionChart} margin={{ left: -10, right: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))} />
-                  <Tooltip formatter={(v) => [formatBRL(v as number), 'Prêmio fechado']} />
-                  <Line type="monotone" dataKey="premium" stroke="oklch(0.45 0.16 255)" strokeWidth={2} dot={{ r: 3 }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                  <XAxis dataKey="name" tick={CHART_AXIS} axisLine={{ stroke: 'var(--border)' }} tickLine={{ stroke: 'var(--border)' }} />
+                  <YAxis tick={CHART_AXIS} axisLine={{ stroke: 'var(--border)' }} tickLine={{ stroke: 'var(--border)' }} tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))} />
+                  <Tooltip formatter={(v) => [formatBRL(v as number), 'Prêmio fechado']} {...CHART_TOOLTIP_STYLE} />
+                  <Line type="monotone" dataKey="premium" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3, fill: 'var(--primary)' }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
