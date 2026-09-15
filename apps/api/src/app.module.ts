@@ -24,6 +24,8 @@ import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { InsurersModule } from './modules/insurers/insurers.module';
+import { QuoteInsurersModule } from './modules/quote-insurers/quote-insurers.module';
+import { ProposalsModule } from './modules/proposals/proposals.module';
 
 @Module({
   imports: [
@@ -62,6 +64,8 @@ import { InsurersModule } from './modules/insurers/insurers.module';
     DocumentsModule,
     QuotesModule,
     InsurersModule,
+    QuoteInsurersModule,
+    ProposalsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
