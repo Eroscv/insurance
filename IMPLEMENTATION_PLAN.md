@@ -371,6 +371,17 @@ Cada fase termina com `npm run lint`, `npm run typecheck`, `npm test` verdes e c
 | 7 | Tasks, Notifications, crons, aba Histórico, Tarefas mobile |
 | 8 | Dashboard, UX (empty/skeleton/toast), responsividade, hardening, seed completo, E2E, docs finais |
 
+## Fase 9 (incremental, pós-MVP): cálculos financeiros e indicadores
+
+Adicionada após o MVP, a pedido do usuário ("cálculos automáticos de todos os tipos"). Escopo confirmado: cálculos financeiros da proposta, indicadores do dashboard, e cálculos por tipo de seguro (mantendo Auto completo; demais tipos seguem na seção "Futuro").
+
+- `packages/shared/src/calculations/financial.ts`: `netPremiumFromGross`/`iofFromGross`/`breakdownGrossPremium` (decomposição do prêmio em líquido + IOF), `installmentWithInterest` (PMT/tabela Price), `proRataPremium` (proporcional para cancelamento), `renewalComparison` (economia vs. apólice vigente). Todas puras e testadas.
+- `organization_settings.iof_rate_percent` (padrão 7,38%) e `organization_settings.monthly_revenue_goal` (meta mensal, opcional) — novos campos configuráveis pelo ADMIN em Configurações.
+- `quotes.expiring_premium` — prêmio da apólice vigente, informado manualmente na aba Visão Geral da cotação (fluxo de renovação); usado no comparativo para calcular a economia por seguradora.
+- Comparativo (`/quotes/:id/comparison`): cada coluna passa a expor `netPremium`, `iofAmount` e `renewal` (economia vs. apólice vigente, quando informada).
+- Dashboard (`/dashboard/summary`): bloco `financial` (prêmio e comissão realizados no mês, receita projetada do pipeline — comissão estimada de propostas selecionadas em cotações ainda abertas —, meta mensal e progresso), `monthlyEvolution` (prêmio fechado nos últimos 6 meses) e `brokerRanking` (ranking de corretores no mês, visível apenas para ADMIN/MANAGER).
+- Todos os cálculos continuam determinísticos (regras matemáticas), sem IA.
+
 ## Futuro (não implementar agora)
 
 WhatsApp Business API (gerar mensagens prontas já existe como texto copiável) · e-mail SMTP real (trocar `MailerService` stub) · APIs de seguradoras (interface `InsurerGateway` por seguradora, entrada manual permanece como fallback) · importação de planilhas (`ImportJob` com etapas upload → leitura → preview → validação → erros → confirmação → importação) · webhooks de saída · gateway de pagamento/assinatura do SaaS · portal do cliente · outros tipos de seguro (tabelas `quote_<tipo>_details`).

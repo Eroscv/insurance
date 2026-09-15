@@ -18,8 +18,11 @@ export interface ComparisonColumn {
   validityDate: string | null;
   commissionPercentage: string;
   commissionAmount: string;
+  netPremium: string;
+  iofAmount: string;
   difference: string;
   percentageDifference: string | null;
+  renewal: { savings: string; savingsPercentage: string | null; isCheaper: boolean } | null;
   coverages: Record<string, { included: boolean; insuredAmount: string | null }>;
   assistances: Record<string, boolean>;
 }
@@ -28,6 +31,8 @@ export interface Comparison {
   coverageNames: string[];
   assistanceNames: string[];
   highlights: { lowestPremiumIds: string[]; lowestDeductibleIds: string[] };
+  iofRatePercent: string;
+  expiringPremium: string | null;
 }
 
 export function useComparison(quoteId: string) {

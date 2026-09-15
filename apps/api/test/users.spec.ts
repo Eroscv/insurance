@@ -45,7 +45,7 @@ describe('users + organizations (RBAC e tenant)', () => {
   it('organization settings are editable by ADMIN only and read by all', async () => {
     const admin = await registerOrg(app);
     const broker = await createUserAndLogin(app, admin, 'BROKER');
-    const body = { commissionPercentage: 12.5, staleQuoteDays: 7, requiredDocumentTypes: ['CNH'], proposalValidityDays: 10, proposalFooterText: null };
+    const body = { commissionPercentage: 12.5, staleQuoteDays: 7, requiredDocumentTypes: ['CNH'], proposalValidityDays: 10, proposalFooterText: null, iofRatePercent: 7.38, monthlyRevenueGoal: null };
     await request(app.getHttpServer()).patch('/api/v1/organizations/current/settings').set(auth(broker)).send(body).expect(403);
     const res = await request(app.getHttpServer()).patch('/api/v1/organizations/current/settings').set(auth(admin)).send(body).expect(200);
     expect(res.body.staleQuoteDays).toBe(7);

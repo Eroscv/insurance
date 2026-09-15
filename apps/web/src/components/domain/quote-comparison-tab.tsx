@@ -94,6 +94,17 @@ export function QuoteComparisonTab({ quote }: { quote: QuoteDetail }) {
             <Row label="Total parcelado">{cols.map((c) => <Cell key={c.proposalId}>{c.installmentTotal ? formatBRL(c.installmentTotal) : '—'}</Cell>)}</Row>
             <Row label="Franquia">{cols.map((c) => <Cell key={c.proposalId} best={isBestDeductible(c)}>{formatBRL(c.deductibleAmount)}{c.deductibleType ? <div className="text-xs font-normal text-muted-foreground">{DEDUCTIBLE_TYPE_LABELS[c.deductibleType as DeductibleType]}</div> : null}</Cell>)}</Row>
             <Row label="Comissão">{cols.map((c) => <Cell key={c.proposalId}><span className="text-muted-foreground">{c.commissionPercentage}% · </span>{formatBRL(c.commissionAmount)}</Cell>)}</Row>
+            <Row label={`Prêmio líquido (IOF ${data.iofRatePercent}%)`}>{cols.map((c) => <Cell key={c.proposalId}>{formatBRL(c.netPremium)}<div className="text-xs font-normal text-muted-foreground">IOF {formatBRL(c.iofAmount)}</div></Cell>)}</Row>
+            {data.expiringPremium ? (
+              <Row label={`Economia vs. apólice vigente (${formatBRL(data.expiringPremium)})`}>
+                {cols.map((c) => (
+                  <Cell key={c.proposalId} best={c.renewal?.isCheaper}>
+                    {c.renewal ? (c.renewal.isCheaper ? `-${formatBRL(c.renewal.savings)}` : `+${formatBRL(String(Math.abs(Number(c.renewal.savings))))}`) : '—'}
+                    {c.renewal?.savingsPercentage ? <div className="text-xs font-normal text-muted-foreground">{c.renewal.isCheaper ? '' : '+'}{c.renewal.savingsPercentage}%</div> : null}
+                  </Cell>
+                ))}
+              </Row>
+            ) : null}
             <Row label="Validade">{cols.map((c) => <Cell key={c.proposalId}>{formatDate(c.validityDate)}</Cell>)}</Row>
             {data.coverageNames.length ? <tr><th colSpan={cols.length + 1} className="bg-muted/30 px-3 py-1.5 text-left text-xs font-semibold uppercase text-muted-foreground">Coberturas</th></tr> : null}
             {data.coverageNames.map((name) => (

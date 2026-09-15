@@ -86,6 +86,10 @@ WON → (terminal)
 - `validity_date` default = hoje + `proposal_validity_days` da organização quando não informada.
 
 ## 9. Comparativo e cálculos
+- Prêmio líquido / IOF: `líquido = total / (1 + aliquota/100)`, `IOF = total − líquido`. Alíquota configurável por organização (`iof_rate_percent`, padrão 7,38%). O corretor digita o prêmio total da seguradora; o sistema apenas decompõe, não recalcula tarifação.
+- Parcelamento com juros (tabela Price): `PMT = P·i·(1+i)^n / ((1+i)^n − 1)`, usado apenas como simulação auxiliar — o valor real da parcela é o digitado pelo corretor.
+- Pro-rata: `valor_proporcional = prêmio_anual × dias_decorridos / dias_no_ano`, para cancelamento ou vigência em período curto.
+- Economia na renovação: se a cotação tiver `expiring_premium` (prêmio da apólice vigente, informado manualmente), cada proposta exibe a diferença e o percentual de economia/aumento em relação a ele.
 - Menor prêmio: menor `total_amount` (empates: todos destacados).
 - Menor franquia: menor `deductible_amount` não nulo (empates: todos).
 - Diferença = A − B; diferença % = (A − B) / B × 100 (B = 0 → não calculável).

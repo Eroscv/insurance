@@ -1,8 +1,8 @@
 'use client';
-import { DOCUMENT_TYPE_LABELS, formatDate, formatQuoteNumber, QUOTE_STATUS_LABELS, type DocumentType } from '@insurance/shared';
-import { AlertTriangle, CheckSquare, FileText, FolderOpen, Send, ThumbsDown, Trophy, Clock } from 'lucide-react';
+import { DOCUMENT_TYPE_LABELS, formatBRL, formatDate, formatQuoteNumber, QUOTE_STATUS_LABELS, type DocumentType } from '@insurance/shared';
+import { AlertTriangle, CheckSquare, FileText, FolderOpen, Medal, Send, ThumbsDown, Trophy, Clock, Target, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { PageHeader } from '@/components/layout/page-header';
 import { AuditTimeline } from '@/components/domain/audit-timeline';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +29,9 @@ export default function DashboardPage() {
   const { data: activity } = useActivity();
   if (isLoading || !data) return <><PageHeader title="Dashboard" /><div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div></>;
   const c = data.cards;
+  const f = data.financial;
   const chart = data.byStatus.filter((s) => !['LOST', 'CANCELLED'].includes(s.status) || s.count > 0).map((s) => ({ name: QUOTE_STATUS_LABELS[s.status], count: s.count }));
+  const evolutionChart = data.monthlyEvolution.map((m) => ({ name: new Date(`${m.month}-02`).toLocaleDateString('pt-BR', { month: 'short' }), premium: Number(m.wonPremium) }));
   return (
     <>
       <PageHeader title={`Olá, ${me?.name.split(' ')[0] ?? ''}`} description="Visão geral da operação de cotação." />
@@ -41,6 +43,40 @@ export default function DashboardPage() {
         <Stat label="Fechadas" value={c.won} icon={Trophy} href="/quotes?status=WON" tone="ok" />
         <Stat label="Perdidas" value={c.lost} icon={ThumbsDown} href="/quotes?status=LOST" tone="bad" />
       </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <Card>
+          <CardContent className="p-4">
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wide"><Trophy className="size-3.5 text-emerald-600" /> Prêmio fechado no mês</p>
+            <p className="mt-2 text-2xl font-semibold">{formatBRL(f.wonPremiumMonth)}</p>
+            <p className="text-xs text-muted-foreground">Comissão realizada: {formatBRL(f.wonCommissionMonth)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wide"><TrendingUp className="size-3.5 text-sky-600" /> Receita projetada (pipeline)</p>
+            <p className="mt-2 text-2xl font-semibold">{formatBRL(f.projectedCommission)}</p>
+            <p className="text-xs text-muted-foreground">Comissão estimada de propostas selecionadas em cotações abertas</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wide"><Target className="size-3.5 text-amber-600" /> Meta mensal</p>
+            {f.monthlyGoal ? (
+              <>
+                <p className="mt-2 text-2xl font-semibold">{f.goalProgressPercent}%</p>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Number(f.goalProgressPercent))}%` }} />
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{formatBRL(f.wonPremiumMonth)} de {formatBRL(f.monthlyGoal)}</p>
+              </>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">Sem meta definida. <Link href="/settings" className="text-primary hover:underline">Configurar</Link></p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader><CardTitle>Cotações por status</CardTitle></CardHeader>
@@ -89,6 +125,43 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader><CardTitle>Evolução do prêmio fechado (6 meses)</CardTitle></CardHeader>
+          <CardContent>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={evolutionChart} margin={{ left: -10, right: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))} />
+                  <Tooltip formatter={(v) => [formatBRL(v as number), 'Prêmio fechado']} />
+                  <Line type="monotone" dataKey="premium" stroke="oklch(0.45 0.16 255)" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+        {data.brokerRanking ? (
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Medal className="size-4 text-amber-600" /> Ranking do mês</CardTitle></CardHeader>
+            <CardContent>
+              {data.brokerRanking.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma cotação fechada este mês ainda.</p>
+              ) : (
+                <ol className="flex flex-col gap-2">
+                  {data.brokerRanking.map((r, i) => (
+                    <li key={r.userId} className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2"><span className="flex size-5 items-center justify-center rounded-full bg-muted text-xs font-medium">{i + 1}</span>{r.name}</span>
+                      <span className="text-right"><span className="font-medium">{formatBRL(r.wonPremium)}</span><span className="ml-1 text-xs text-muted-foreground">({r.wonCount})</span></span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
       <Card className="mt-4">
         <CardHeader><CardTitle>Atividades recentes</CardTitle></CardHeader>

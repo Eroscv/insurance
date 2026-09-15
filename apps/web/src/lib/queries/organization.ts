@@ -16,6 +16,8 @@ export interface Organization {
     requiredDocumentTypes: DocumentType[];
     proposalValidityDays: number;
     proposalFooterText: string | null;
+    iofRatePercent: string;
+    monthlyRevenueGoal: string | null;
   } | null;
 }
 

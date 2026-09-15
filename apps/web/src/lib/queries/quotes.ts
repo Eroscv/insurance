@@ -31,6 +31,7 @@ export interface QuoteRow {
   lostReason: LostReason | null;
   lostNotes: string | null;
   notes: string | null;
+  expiringPremium: string | null;
   closedAt: string | null;
   lastActivityAt: string;
   createdAt: string;

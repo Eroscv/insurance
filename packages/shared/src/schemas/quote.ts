@@ -7,7 +7,7 @@ import {
   PRIORITY_VALUES,
   QUOTE_STATUS_VALUES,
 } from '../enums';
-import { cep, optionalDateOnly, optionalDocumentNumber, optionalString, paginationSchema, uuid } from './common';
+import { cep, optionalDateOnly, optionalDocumentNumber, optionalMoney, optionalString, paginationSchema, uuid } from './common';
 
 const emptyToNull = <T extends z.ZodTypeAny>(schema: T) => schema.nullable().optional().or(z.literal('').transform(() => null));
 
@@ -37,6 +37,8 @@ export const createQuoteSchema = z.object({
   priority: z.enum(PRIORITY_VALUES).default('MEDIUM'),
   assignedUserId: uuid.nullable().optional(),
   notes: optionalString(2000),
+  /** Prêmio da apólice vigente (renovação), informado manualmente. Usado para calcular a economia no comparativo. */
+  expiringPremium: optionalMoney,
   autoDetails: quoteAutoDetailsSchema.optional(),
   insurerIds: z.array(uuid).max(20).optional(),
 });
@@ -47,6 +49,7 @@ export const updateQuoteSchema = z.object({
   priority: z.enum(PRIORITY_VALUES).optional(),
   assignedUserId: uuid.nullable().optional(),
   notes: optionalString(2000),
+  expiringPremium: optionalMoney,
 });
 export type UpdateQuoteInput = z.infer<typeof updateQuoteSchema>;
 

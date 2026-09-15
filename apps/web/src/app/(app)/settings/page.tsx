@@ -12,6 +12,7 @@ import {
 } from '@insurance/shared';
 import { useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import type { z } from 'zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +36,8 @@ export default function OrganizationSettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const orgForm = useForm<UpdateOrganizationInput>({ resolver: zodResolver(updateOrganizationSchema) });
-  const settingsForm = useForm<UpdateOrganizationSettingsInput>({ resolver: zodResolver(updateOrganizationSettingsSchema) });
+  type SettingsFormValues = z.input<typeof updateOrganizationSettingsSchema>;
+  const settingsForm = useForm<SettingsFormValues, unknown, UpdateOrganizationSettingsInput>({ resolver: zodResolver(updateOrganizationSettingsSchema) });
 
   useEffect(() => {
     if (!org) return;
@@ -46,6 +48,8 @@ export default function OrganizationSettingsPage() {
       requiredDocumentTypes: org.settings?.requiredDocumentTypes ?? ['CNH', 'CRLV'],
       proposalValidityDays: org.settings?.proposalValidityDays ?? 7,
       proposalFooterText: org.settings?.proposalFooterText ?? '',
+      iofRatePercent: Number(org.settings?.iofRatePercent ?? 7.38),
+      monthlyRevenueGoal: org.settings?.monthlyRevenueGoal ?? '',
     });
   }, [org, orgForm, settingsForm]);
 
@@ -160,6 +164,12 @@ export default function OrganizationSettingsPage() {
               </FormField>
               <FormField label="Validade padrão da proposta (dias)" htmlFor="proposalValidityDays" error={se.proposalValidityDays?.message}>
                 <Input id="proposalValidityDays" type="number" min={1} {...settingsForm.register('proposalValidityDays', { valueAsNumber: true })} />
+              </FormField>
+              <FormField label="Alíquota de IOF (%)" htmlFor="iofRatePercent" error={se.iofRatePercent?.message} hint="Usada para decompor o prêmio em líquido + IOF no comparativo.">
+                <Input id="iofRatePercent" type="number" step="0.01" min={0} max={100} {...settingsForm.register('iofRatePercent', { valueAsNumber: true })} />
+              </FormField>
+              <FormField label="Meta mensal de prêmio fechado (R$)" htmlFor="monthlyRevenueGoal" error={se.monthlyRevenueGoal?.message} hint="Vazio = sem meta no dashboard.">
+                <Input id="monthlyRevenueGoal" inputMode="decimal" placeholder="Ex.: 50000" {...settingsForm.register('monthlyRevenueGoal')} />
               </FormField>
             </div>
             <FormField label="Documentos obrigatórios" error={se.requiredDocumentTypes?.message} hint="Necessários para marcar a cotação como “Dados completos”.">

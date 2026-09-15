@@ -47,6 +47,25 @@ describe('comparison, message template and PDF', () => {
     expect(byName.Tokio.assistances['Carro reserva']).toBe(false);
   });
 
+  it('comparison exposes IOF/net premium breakdown and renewal savings when expiringPremium is set', async () => {
+    const s = await registerOrg(app);
+    const { quoteId, proposals } = await quoteWithProposals(app, s);
+    const res = await request(app.getHttpServer()).get(`/api/v1/quotes/${quoteId}/comparison`).set(auth(s)).expect(200);
+    expect(res.body.iofRatePercent).toBe('7.38');
+    expect(res.body.expiringPremium).toBeNull();
+    const porto = res.body.columns.find((c: { proposalId: string }) => c.proposalId === proposals[0].id);
+    // total 3200 = líquido + IOF a 7.38%
+    expect(porto.netPremium).toBe('2980.07');
+    expect(porto.iofAmount).toBe('219.93');
+    expect(porto.renewal).toBeNull();
+
+    await request(app.getHttpServer()).patch(`/api/v1/quotes/${quoteId}`).set(auth(s)).send({ expiringPremium: '3500' }).expect(200);
+    const res2 = await request(app.getHttpServer()).get(`/api/v1/quotes/${quoteId}/comparison`).set(auth(s)).expect(200);
+    expect(res2.body.expiringPremium).toBe('3500');
+    const azul = res2.body.columns.find((c: { proposalId: string }) => c.proposalId === proposals[1].id);
+    expect(azul.renewal).toEqual({ savings: '600.00', savingsPercentage: '17.14', isCheaper: true });
+  });
+
   it('message template lists proposals sorted by price', async () => {
     const s = await registerOrg(app);
     const { quoteId } = await quoteWithProposals(app, s);

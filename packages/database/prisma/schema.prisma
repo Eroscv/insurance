@@ -177,6 +177,8 @@ model OrganizationSettings {
   requiredDocumentTypes DocumentType[] @default([CNH, CRLV]) @map("required_document_types")
   proposalValidityDays  Int            @default(7) @map("proposal_validity_days")
   proposalFooterText    String?        @map("proposal_footer_text")
+  iofRatePercent        Decimal        @default(7.38) @map("iof_rate_percent") @db.Decimal(5, 2)
+  monthlyRevenueGoal    Decimal?       @map("monthly_revenue_goal") @db.Decimal(12, 2)
   updatedAt             DateTime       @updatedAt @map("updated_at") @db.Timestamptz
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -359,23 +361,24 @@ model Document {
 // ---------------------------------------------------------------- quotes
 
 model Quote {
-  id             String        @id @default(uuid()) @db.Uuid
-  organizationId String        @map("organization_id") @db.Uuid
-  quoteNumber    Int           @map("quote_number")
-  clientId       String        @map("client_id") @db.Uuid
-  vehicleId      String?       @map("vehicle_id") @db.Uuid
-  assignedUserId String?       @map("assigned_user_id") @db.Uuid
-  insuranceType  InsuranceType @default(AUTO) @map("insurance_type")
-  status         QuoteStatus   @default(NEW)
-  priority       Priority      @default(MEDIUM)
-  lostReason     LostReason?   @map("lost_reason")
-  lostNotes      String?       @map("lost_notes")
-  notes          String?
-  closedAt       DateTime?     @map("closed_at") @db.Timestamptz
-  lastActivityAt DateTime      @default(now()) @map("last_activity_at") @db.Timestamptz
-  deletedAt      DateTime?     @map("deleted_at") @db.Timestamptz
-  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  id              String        @id @default(uuid()) @db.Uuid
+  organizationId  String        @map("organization_id") @db.Uuid
+  quoteNumber     Int           @map("quote_number")
+  clientId        String        @map("client_id") @db.Uuid
+  vehicleId       String?       @map("vehicle_id") @db.Uuid
+  assignedUserId  String?       @map("assigned_user_id") @db.Uuid
+  insuranceType   InsuranceType @default(AUTO) @map("insurance_type")
+  status          QuoteStatus   @default(NEW)
+  priority        Priority      @default(MEDIUM)
+  lostReason      LostReason?   @map("lost_reason")
+  lostNotes       String?       @map("lost_notes")
+  notes           String?
+  expiringPremium Decimal?      @map("expiring_premium") @db.Decimal(12, 2)
+  closedAt        DateTime?     @map("closed_at") @db.Timestamptz
+  lastActivityAt  DateTime      @default(now()) @map("last_activity_at") @db.Timestamptz
+  deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz
 
   organization  Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   client        Client               @relation(fields: [clientId], references: [id])

@@ -117,6 +117,7 @@ export class QuotesService {
           priority: input.priority,
           assignedUserId: input.assignedUserId ?? ctx.userId,
           notes: input.notes ?? null,
+          expiringPremium: input.expiringPremium ?? null,
           autoDetails: input.autoDetails ? { create: this.autoDetailsData(input.autoDetails) } : undefined,
           statusHistory: { create: { organizationId: ctx.organizationId, fromStatus: null, toStatus: 'NEW', userId: ctx.userId } },
         },
@@ -145,7 +146,7 @@ export class QuotesService {
     }
     const quote = await this.prisma.tenant.quote.update({
       where: { id },
-      data: { vehicleId: input.vehicleId, priority: input.priority, assignedUserId: input.assignedUserId, notes: input.notes, lastActivityAt: new Date() },
+      data: { vehicleId: input.vehicleId, priority: input.priority, assignedUserId: input.assignedUserId, notes: input.notes, expiringPremium: input.expiringPremium, lastActivityAt: new Date() },
     });
     await this.audit.record({ entity: 'quote', entityId: id, action: 'UPDATE', oldData: this.pick(before), newData: this.pick(quote) });
     return this.get(id);

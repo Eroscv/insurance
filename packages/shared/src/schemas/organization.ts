@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { DOCUMENT_TYPE_VALUES } from '../enums';
-import { optionalDocumentNumber, optionalEmail, optionalString, percentage, phone } from './common';
+import { optionalDocumentNumber, optionalEmail, optionalMoney, optionalString, percentage, phone } from './common';
 
 export const updateOrganizationSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -17,5 +17,9 @@ export const updateOrganizationSettingsSchema = z.object({
   requiredDocumentTypes: z.array(z.enum(DOCUMENT_TYPE_VALUES)),
   proposalValidityDays: z.number().int().min(1).max(90),
   proposalFooterText: optionalString(500),
+  /** Alíquota de IOF usada para decompor o prêmio total em líquido + IOF nas telas de proposta/comparativo. */
+  iofRatePercent: percentage,
+  /** Meta mensal de prêmio fechado (soma dos totalAmount das cotações WON no mês). Vazio = sem meta. */
+  monthlyRevenueGoal: optionalMoney,
 });
 export type UpdateOrganizationSettingsInput = z.infer<typeof updateOrganizationSettingsSchema>;

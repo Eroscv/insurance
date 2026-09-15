@@ -42,6 +42,8 @@ organizations 1─* audit_logs
 | stale_quote_days | int default 5 |
 | required_document_types | DocumentType[] default {CNH,CRLV} |
 | proposal_validity_days | int default 7 |
+| iof_rate_percent | numeric(5,2) default 7.38 — alíquota usada para decompor prêmio em líquido + IOF |
+| monthly_revenue_goal | numeric(12,2) nullable — meta mensal de prêmio fechado, exibida no dashboard |
 | proposal_footer_text | text? |
 
 ### organization_quote_counters
@@ -71,7 +73,7 @@ organizations 1─* audit_logs
 `file_url` do PRD não é persistida: gerada sob demanda (URL pré-assinada).
 
 ### quotes
-| id | organization_id | quote_number int | client_id FK | vehicle_id FK? | assigned_user_id FK? | insurance_type InsuranceType default AUTO | status QuoteStatus default NEW | priority Priority default MEDIUM | lost_reason LostReason? | lost_notes? | notes? | closed_at? | last_activity_at | deleted_at? | timestamps |
+| id | organization_id | quote_number int | client_id FK | vehicle_id FK? | assigned_user_id FK? | insurance_type InsuranceType default AUTO | status QuoteStatus default NEW | priority Priority default MEDIUM | lost_reason LostReason? | lost_notes? | notes? | expiring_premium numeric(12,2)? | closed_at? | last_activity_at | deleted_at? | timestamps |
 Índices: unique `(organization_id, quote_number)`; `(organization_id, status)`, `(organization_id, assigned_user_id)`, `(organization_id, client_id)`, `(organization_id, created_at)`.
 
 ### quote_auto_details

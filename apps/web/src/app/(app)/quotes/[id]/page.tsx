@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -123,6 +124,7 @@ function OverviewTab({ quote, canReassign }: { quote: QuoteDetail; canReassign: 
   const update = useUpdateQuote(quote.id);
   const { data: users } = useUserOptions();
   const [notes, setNotes] = useState(quote.notes ?? '');
+  const [expiringPremium, setExpiringPremium] = useState(quote.expiringPremium ?? '');
   const save = async (patch: Parameters<typeof update.mutateAsync>[0]) => { try { await update.mutateAsync(patch); toast.success('Cotação atualizada.'); } catch (e) { handleApiError(e); } };
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -135,6 +137,16 @@ function OverviewTab({ quote, canReassign }: { quote: QuoteDetail; canReassign: 
           <Field label="Seguradoras consultadas" value={String(quote.quoteInsurers.length)} />
           <Field label="Propostas" value={String(quote.quoteInsurers.reduce((n, qi) => n + qi.proposals.length, 0))} />
           <Field label="Encerrada em" value={quote.closedAt ? formatDateTime(quote.closedAt) : null} />
+          <FormField label="Prêmio da apólice vigente (renovação)" htmlFor="qexpiring" hint="Usado para calcular a economia no comparativo.">
+            <Input
+              id="qexpiring"
+              inputMode="decimal"
+              placeholder="Ex.: 3500.00"
+              value={expiringPremium}
+              onChange={(e) => setExpiringPremium(e.target.value)}
+              onBlur={() => expiringPremium !== (quote.expiringPremium ?? '') && save({ expiringPremium: expiringPremium || null })}
+            />
+          </FormField>
           <div className="sm:col-span-3">
             <FormField label="Observações" htmlFor="qnotes">
               <Textarea id="qnotes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={() => notes !== (quote.notes ?? '') && save({ notes })} />
