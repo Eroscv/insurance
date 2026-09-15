@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ROLE_LABELS } from '@insurance/shared';
 import { Button } from '@/components/ui/button';
 import { useLogout, type Me } from '@/lib/queries/auth';
+import { NotificationsBell } from './notifications-bell';
 
 export function Topbar({ onMenu, me, children }: { onMenu: () => void; me?: Me; children?: React.ReactNode }) {
   const router = useRouter();
@@ -15,6 +16,7 @@ export function Topbar({ onMenu, me, children }: { onMenu: () => void; me?: Me; 
       </Button>
       <div className="flex-1" />
       {children}
+      <NotificationsBell />
       {me ? (
         <div className="hidden items-center gap-2 text-sm sm:flex">
           <User className="size-4 text-muted-foreground" />

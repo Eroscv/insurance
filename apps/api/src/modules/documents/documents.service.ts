@@ -9,6 +9,8 @@ import { PrismaService } from '../../infra/prisma/prisma.service';
 import { StorageService } from '../../infra/storage/storage.service';
 import { validateUpload, type UploadedFile } from '../../infra/storage/upload';
 import { AuditService } from '../audit/audit.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { DOCUMENT_TYPE_LABELS, formatQuoteNumber } from '@insurance/shared';
 
 const documentInclude = {
   uploadedBy: { select: { id: true, name: true } },
@@ -24,6 +26,7 @@ export class DocumentsService {
     private readonly storage: StorageService,
     private readonly audit: AuditService,
     private readonly config: ConfigService<Env, true>,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(q: ListDocumentsQuery) {
@@ -80,7 +83,12 @@ export class DocumentsService {
       },
       include: documentInclude,
     });
-    if (input.quoteId) await this.prisma.tenant.quote.update({ where: { id: input.quoteId }, data: { lastActivityAt: new Date() } });
+    if (input.quoteId) {
+      const quote = await this.prisma.tenant.quote.update({ where: { id: input.quoteId }, data: { lastActivityAt: new Date() } });
+      if (quote.assignedUserId && quote.assignedUserId !== TenantContext.require().userId) {
+        await this.notifications.notifyQuoteOwner(quote, { type: 'DOCUMENT_RECEIVED', title: `Documento recebido: ${DOCUMENT_TYPE_LABELS[doc.type]}`, body: `Cotação ${formatQuoteNumber(quote.quoteNumber)} · ${doc.fileName}` });
+      }
+    }
     await this.audit.record({ entity: 'document', entityId: doc.id, action: 'UPLOAD', newData: { type: doc.type, fileName: doc.fileName, quoteId: doc.quoteId, clientId: doc.clientId } });
     return doc;
   }

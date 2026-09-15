@@ -8,3 +8,4 @@ export * from './document';
 export * from './quote';
 export * from './insurer';
 export * from './proposal';
+export * from './task';

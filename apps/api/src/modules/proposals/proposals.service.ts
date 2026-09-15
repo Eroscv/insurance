@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import type { Prisma } from '@insurance/database';
 import type { ProposalInput } from '@insurance/shared';
-import { orgId } from '../../common/tenant/tenant-context';
+import { orgId, TenantContext } from '../../common/tenant/tenant-context';
 import type { Env } from '../../config/env';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { StorageService } from '../../infra/storage/storage.service';
@@ -10,6 +10,8 @@ import { validateUpload, type UploadedFile } from '../../infra/storage/upload';
 import { AuditService } from '../audit/audit.service';
 import { QuoteInsurersService } from '../quote-insurers/quote-insurers.service';
 import { QuotesService } from '../quotes/quotes.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { formatBRL, formatQuoteNumber } from '@insurance/shared';
 
 export const proposalInclude = {
   coverages: { orderBy: { name: 'asc' as const } },
@@ -26,6 +28,7 @@ export class ProposalsService {
     private readonly quotes: QuotesService,
     private readonly quoteInsurers: QuoteInsurersService,
     private readonly config: ConfigService<Env, true>,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async listByQuote(quoteId: string) {
@@ -57,6 +60,9 @@ export class ProposalsService {
     await this.quoteInsurers.markReceived(quoteInsurerId);
     await this.audit.record({ entity: 'proposal', entityId: proposal.id, action: 'CREATE', newData: { insurer: qi.insurer.name, totalAmount: proposal.totalAmount, quoteId: qi.quoteId } });
     await this.quotes.touch(qi.quoteId);
+    if (quote.assignedUserId && quote.assignedUserId !== TenantContext.require().userId) {
+      await this.notifications.notifyQuoteOwner(quote, { type: 'PROPOSAL_RECEIVED', title: `Proposta recebida: ${qi.insurer.name}`, body: `Cotação ${formatQuoteNumber(quote.quoteNumber)} · ${formatBRL(proposal.totalAmount.toString())}` });
+    }
     // Primeira proposta: QUOTING → WAITING_PROPOSALS → PROPOSALS_RECEIVED (efeito determinístico; máquina valida cada passo)
     if (quote.status === 'QUOTING') await this.quotes.autoTransition(qi.quoteId, 'WAITING_PROPOSALS', 'auto:first_proposal');
     if (quote.status === 'QUOTING' || quote.status === 'WAITING_PROPOSALS') await this.quotes.autoTransition(qi.quoteId, 'PROPOSALS_RECEIVED', 'auto:first_proposal');

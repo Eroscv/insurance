@@ -15,6 +15,7 @@ import { MailerModule } from './infra/mailer/mailer.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { StorageModule } from './infra/storage/storage.module';
 import { PdfModule } from './infra/pdf/pdf.module';
+import { SchedulerModule } from './infra/scheduler/scheduler.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
@@ -29,6 +30,8 @@ import { QuoteInsurersModule } from './modules/quote-insurers/quote-insurers.mod
 import { ProposalsModule } from './modules/proposals/proposals.module';
 import { ComparisonModule } from './modules/comparison/comparison.module';
 import { ProposalPdfModule } from './modules/proposal-pdf/proposal-pdf.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 
 @Module({
   imports: [
@@ -72,6 +75,9 @@ import { ProposalPdfModule } from './modules/proposal-pdf/proposal-pdf.module';
     ProposalsModule,
     ComparisonModule,
     ProposalPdfModule,
+    NotificationsModule,
+    TasksModule,
+    SchedulerModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
