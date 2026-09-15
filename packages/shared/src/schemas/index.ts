@@ -2,3 +2,6 @@ export * from './common';
 export * from './auth';
 export * from './organization';
 export * from './user';
+export * from './client';
+export * from './vehicle';
+export * from './document';

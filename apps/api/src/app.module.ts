@@ -19,6 +19,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { UsersModule } from './modules/users/users.module';
+import { ClientsModule } from './modules/clients/clients.module';
+import { VehiclesModule } from './modules/vehicles/vehicles.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 
 @Module({
   imports: [
@@ -52,6 +55,9 @@ import { UsersModule } from './modules/users/users.module';
     AuthModule,
     OrganizationsModule,
     UsersModule,
+    ClientsModule,
+    VehiclesModule,
+    DocumentsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
