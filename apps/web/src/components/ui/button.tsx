@@ -33,12 +33,18 @@ export interface ButtonProps extends React.ComponentProps<'button'>, VariantProp
 }
 
 function Button({ className, variant, size, asChild = false, loading, children, disabled, ...props }: ButtonProps) {
-  const Comp = asChild ? Slot : 'button';
+  if (asChild) {
+    return (
+      <Slot className={cn(buttonVariants({ variant, size, className }))} {...props}>
+        {children}
+      </Slot>
+    );
+  }
   return (
-    <Comp className={cn(buttonVariants({ variant, size, className }))} disabled={disabled || loading} {...props}>
+    <button className={cn(buttonVariants({ variant, size, className }))} disabled={disabled || loading} {...props}>
       {loading ? <Loader2 className="animate-spin" /> : null}
       {children}
-    </Comp>
+    </button>
   );
 }
 
