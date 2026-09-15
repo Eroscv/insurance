@@ -1,0 +1,615 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- enums
+
+enum Role {
+  ADMIN
+  MANAGER
+  BROKER
+}
+
+enum ClientType {
+  INDIVIDUAL
+  COMPANY
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  STABLE_UNION
+}
+
+enum Fuel {
+  GASOLINE
+  ETHANOL
+  FLEX
+  DIESEL
+  ELECTRIC
+  HYBRID
+  GNV
+}
+
+enum DocumentType {
+  CNH
+  CRLV
+  ID
+  ADDRESS_PROOF
+  PROPOSAL
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  RECEIVED
+  VALIDATED
+  REJECTED
+}
+
+enum InsuranceType {
+  AUTO
+}
+
+enum QuoteStatus {
+  NEW
+  WAITING_DOCUMENTS
+  DATA_COMPLETE
+  QUOTING
+  WAITING_PROPOSALS
+  PROPOSALS_RECEIVED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LostReason {
+  PRICE
+  CLIENT_GAVE_UP
+  COMPETITOR
+  INSURER_REFUSED
+  NO_RESPONSE
+  OTHER
+}
+
+enum QuoteInsurerStatus {
+  NOT_STARTED
+  REQUESTED
+  WAITING
+  RECEIVED
+  REFUSED
+  NO_RESPONSE
+  CANCELLED
+}
+
+enum ProposalStatus {
+  RECEIVED
+  SELECTED
+  REJECTED
+  EXPIRED
+}
+
+enum DeductibleType {
+  STANDARD
+  REDUCED
+  INCREASED
+  NONE
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum NotificationType {
+  NEW_TASK
+  TASK_OVERDUE
+  DOCUMENT_RECEIVED
+  DOCUMENT_PENDING
+  PROPOSAL_RECEIVED
+  PROPOSAL_EXPIRING
+  STALE_QUOTE
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+  UPLOAD
+  SEND
+  SELECT_PROPOSAL
+  LOGIN
+}
+
+// ---------------------------------------------------------------- organization
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  legalName String?  @map("legal_name")
+  document  String?
+  email     String?
+  phone     String?
+  logoKey   String?  @map("logo_key")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  settings      OrganizationSettings?
+  quoteCounter  OrganizationQuoteCounter?
+  users         User[]
+  clients       Client[]
+  vehicles      Vehicle[]
+  documents     Document[]
+  quotes        Quote[]
+  insurers      Insurer[]
+  quoteInsurers QuoteInsurer[]
+  proposals     Proposal[]
+  tasks         Task[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  statusHistory QuoteStatusHistory[]
+
+  @@map("organizations")
+}
+
+model OrganizationSettings {
+  organizationId        String         @id @map("organization_id") @db.Uuid
+  commissionPercentage  Decimal        @default(10) @map("commission_percentage") @db.Decimal(5, 2)
+  staleQuoteDays        Int            @default(5) @map("stale_quote_days")
+  requiredDocumentTypes DocumentType[] @default([CNH, CRLV]) @map("required_document_types")
+  proposalValidityDays  Int            @default(7) @map("proposal_validity_days")
+  proposalFooterText    String?        @map("proposal_footer_text")
+  updatedAt             DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_settings")
+}
+
+model OrganizationQuoteCounter {
+  organizationId String @id @map("organization_id") @db.Uuid
+  lastNumber     Int    @default(0) @map("last_number")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_quote_counters")
+}
+
+// ---------------------------------------------------------------- users / auth
+
+model User {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String
+  email          String    @unique
+  passwordHash   String    @map("password_hash")
+  role           Role      @default(BROKER)
+  phone          String?
+  active         Boolean   @default(true)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sessions          Session[]
+  passwordResets    PasswordReset[]
+  assignedQuotes    Quote[]              @relation("QuoteAssignee")
+  uploadedDocuments Document[]           @relation("DocumentUploader")
+  validatedDocs     Document[]           @relation("DocumentValidator")
+  tasks             Task[]               @relation("TaskOwner")
+  createdTasks      Task[]               @relation("TaskCreator")
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  statusChanges     QuoteStatusHistory[]
+  quoteInsurers     QuoteInsurer[]
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+model Session {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  userAgent String?   @map("user_agent")
+  ip        String?
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  usedAt    DateTime? @map("used_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+}
+
+// ---------------------------------------------------------------- clients / vehicles
+
+model Client {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  type           ClientType     @default(INDIVIDUAL)
+  name           String
+  document       String
+  birthDate      DateTime?      @map("birth_date") @db.Date
+  maritalStatus  MaritalStatus? @map("marital_status")
+  email          String?
+  phone          String?
+  whatsapp       String?
+  zipCode        String?        @map("zip_code")
+  street         String?
+  number         String?
+  complement     String?
+  neighborhood   String?
+  city           String?
+  state          String?        @db.Char(2)
+  notes          String?
+  deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vehicles     Vehicle[]
+  quotes       Quote[]
+  documents    Document[]
+  tasks        Task[]
+
+  // unicidade parcial (deleted_at IS NULL) criada via SQL na migration
+  @@index([organizationId, document])
+  @@index([organizationId, phone])
+  @@index([organizationId, email])
+  @@index([organizationId, name])
+  @@map("clients")
+}
+
+model Vehicle {
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  clientId          String    @map("client_id") @db.Uuid
+  brand             String
+  model             String
+  version           String?
+  manufacturingYear Int       @map("manufacturing_year")
+  modelYear         Int       @map("model_year")
+  plate             String?
+  chassis           String?
+  renavam           String?
+  fuel              Fuel?
+  zeroKm            Boolean   @default(false) @map("zero_km")
+  usageType         String?   @map("usage_type")
+  overnightLocation String?   @map("overnight_location")
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  quotes       Quote[]
+
+  @@index([organizationId, clientId])
+  @@index([organizationId, plate])
+  @@map("vehicles")
+}
+
+// ---------------------------------------------------------------- documents
+
+model Document {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  clientId       String?        @map("client_id") @db.Uuid
+  quoteId        String?        @map("quote_id") @db.Uuid
+  type           DocumentType
+  fileName       String         @map("file_name")
+  storageKey     String         @map("storage_key")
+  mimeType       String         @map("mime_type")
+  size           Int
+  status         DocumentStatus @default(RECEIVED)
+  uploadedById   String         @map("uploaded_by") @db.Uuid
+  uploadedAt     DateTime       @default(now()) @map("uploaded_at") @db.Timestamptz
+  validatedById  String?        @map("validated_by") @db.Uuid
+  validatedAt    DateTime?      @map("validated_at") @db.Timestamptz
+  notes          String?
+  deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client       Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  quote        Quote?       @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  uploadedBy   User         @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  validatedBy  User?        @relation("DocumentValidator", fields: [validatedById], references: [id])
+
+  @@index([organizationId, quoteId])
+  @@index([organizationId, clientId])
+  @@index([organizationId, status])
+  @@map("documents")
+}
+
+// ---------------------------------------------------------------- quotes
+
+model Quote {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  quoteNumber    Int           @map("quote_number")
+  clientId       String        @map("client_id") @db.Uuid
+  vehicleId      String?       @map("vehicle_id") @db.Uuid
+  assignedUserId String?       @map("assigned_user_id") @db.Uuid
+  insuranceType  InsuranceType @default(AUTO) @map("insurance_type")
+  status         QuoteStatus   @default(NEW)
+  priority       Priority      @default(MEDIUM)
+  lostReason     LostReason?   @map("lost_reason")
+  lostNotes      String?       @map("lost_notes")
+  notes          String?
+  closedAt       DateTime?     @map("closed_at") @db.Timestamptz
+  lastActivityAt DateTime      @default(now()) @map("last_activity_at") @db.Timestamptz
+  deletedAt      DateTime?     @map("deleted_at") @db.Timestamptz
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization  Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client        Client               @relation(fields: [clientId], references: [id])
+  vehicle       Vehicle?             @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  assignedUser  User?                @relation("QuoteAssignee", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  autoDetails   QuoteAutoDetails?
+  statusHistory QuoteStatusHistory[]
+  quoteInsurers QuoteInsurer[]
+  documents     Document[]
+  tasks         Task[]
+
+  @@unique([organizationId, quoteNumber])
+  @@index([organizationId, status])
+  @@index([organizationId, assignedUserId])
+  @@index([organizationId, clientId])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, lastActivityAt])
+  @@map("quotes")
+}
+
+model QuoteAutoDetails {
+  quoteId             String          @id @map("quote_id") @db.Uuid
+  mainDriverName      String?         @map("main_driver_name")
+  mainDriverDocument  String?         @map("main_driver_document")
+  mainDriverBirthDate DateTime?       @map("main_driver_birth_date") @db.Date
+  maritalStatus       MaritalStatus?  @map("marital_status")
+  profession          String?
+  residenceZipCode    String?         @map("residence_zip_code")
+  vehicleUsage        String?         @map("vehicle_usage")
+  annualMileage       Int?            @map("annual_mileage")
+  hasHomeGarage       Boolean?        @map("has_home_garage")
+  hasWorkGarage       Boolean?        @map("has_work_garage")
+  commercialUse       Boolean?        @map("commercial_use")
+  appUsage            Boolean?        @map("app_usage")
+  numberOfDrivers     Int?            @map("number_of_drivers")
+  deductibleType      DeductibleType? @map("deductible_type")
+  desiredCoverage     String?         @map("desired_coverage")
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@map("quote_auto_details")
+}
+
+model QuoteStatusHistory {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  quoteId        String       @map("quote_id") @db.Uuid
+  fromStatus     QuoteStatus? @map("from_status")
+  toStatus       QuoteStatus  @map("to_status")
+  userId         String?      @map("user_id") @db.Uuid
+  reason         String?
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  quote        Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([quoteId, createdAt])
+  @@map("quote_status_history")
+}
+
+// ---------------------------------------------------------------- insurers / proposals
+
+model Insurer {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String
+  document       String?
+  logoKey        String?   @map("logo_key")
+  email          String?
+  phone          String?
+  website        String?
+  active         Boolean   @default(true)
+  notes          String?
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  quoteInsurers QuoteInsurer[]
+
+  @@index([organizationId, name])
+  @@map("insurers")
+}
+
+model QuoteInsurer {
+  id             String             @id @default(uuid()) @db.Uuid
+  organizationId String             @map("organization_id") @db.Uuid
+  quoteId        String             @map("quote_id") @db.Uuid
+  insurerId      String             @map("insurer_id") @db.Uuid
+  status         QuoteInsurerStatus @default(NOT_STARTED)
+  requestedAt    DateTime?          @map("requested_at") @db.Timestamptz
+  respondedAt    DateTime?          @map("responded_at") @db.Timestamptz
+  notes          String?
+  createdById    String             @map("created_by") @db.Uuid
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  quote        Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  insurer      Insurer      @relation(fields: [insurerId], references: [id])
+  createdBy    User         @relation(fields: [createdById], references: [id])
+  proposals    Proposal[]
+
+  @@unique([quoteId, insurerId])
+  @@index([organizationId, quoteId])
+  @@map("quote_insurers")
+}
+
+model Proposal {
+  id                   String          @id @default(uuid()) @db.Uuid
+  organizationId       String          @map("organization_id") @db.Uuid
+  quoteInsurerId       String          @map("quote_insurer_id") @db.Uuid
+  proposalNumber       String?         @map("proposal_number")
+  totalAmount          Decimal         @map("total_amount") @db.Decimal(12, 2)
+  firstInstallment     Decimal?        @map("first_installment") @db.Decimal(12, 2)
+  installmentAmount    Decimal?        @map("installment_amount") @db.Decimal(12, 2)
+  installments         Int             @default(1)
+  deductibleAmount     Decimal?        @map("deductible_amount") @db.Decimal(12, 2)
+  deductibleType       DeductibleType? @map("deductible_type")
+  commissionPercentage Decimal?        @map("commission_percentage") @db.Decimal(5, 2)
+  validityDate         DateTime?       @map("validity_date") @db.Date
+  storageKey           String?         @map("storage_key")
+  fileName             String?         @map("file_name")
+  status               ProposalStatus  @default(RECEIVED)
+  notes                String?
+  createdAt            DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  quoteInsurer QuoteInsurer         @relation(fields: [quoteInsurerId], references: [id], onDelete: Cascade)
+  coverages    ProposalCoverage[]
+  assistances  ProposalAssistance[]
+
+  @@index([organizationId, quoteInsurerId])
+  @@index([organizationId, status, validityDate])
+  @@map("proposals")
+}
+
+model ProposalCoverage {
+  id            String   @id @default(uuid()) @db.Uuid
+  proposalId    String   @map("proposal_id") @db.Uuid
+  name          String
+  insuredAmount Decimal? @map("insured_amount") @db.Decimal(12, 2)
+  included      Boolean  @default(true)
+  notes         String?
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@map("proposal_coverages")
+}
+
+model ProposalAssistance {
+  id          String  @id @default(uuid()) @db.Uuid
+  proposalId  String  @map("proposal_id") @db.Uuid
+  name        String
+  included    Boolean @default(true)
+  description String?
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@map("proposal_assistances")
+}
+
+// ---------------------------------------------------------------- tasks / notifications / audit
+
+model Task {
+  id             String     @id @default(uuid()) @db.Uuid
+  organizationId String     @map("organization_id") @db.Uuid
+  userId         String     @map("user_id") @db.Uuid
+  clientId       String?    @map("client_id") @db.Uuid
+  quoteId        String?    @map("quote_id") @db.Uuid
+  title          String
+  description    String?
+  priority       Priority   @default(MEDIUM)
+  status         TaskStatus @default(TODO)
+  dueDate        DateTime?  @map("due_date") @db.Timestamptz
+  completedAt    DateTime?  @map("completed_at") @db.Timestamptz
+  createdById    String     @map("created_by") @db.Uuid
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation("TaskOwner", fields: [userId], references: [id])
+  createdBy    User         @relation("TaskCreator", fields: [createdById], references: [id])
+  client       Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  quote        Quote?       @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, dueDate])
+  @@index([organizationId, userId])
+  @@index([organizationId, quoteId])
+  @@map("tasks")
+}
+
+model Notification {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  userId         String           @map("user_id") @db.Uuid
+  type           NotificationType
+  title          String
+  body           String?
+  entity         String?
+  entityId       String?          @map("entity_id") @db.Uuid
+  dedupeKey      String?          @map("dedupe_key")
+  readAt         DateTime?        @map("read_at") @db.Timestamptz
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // unicidade parcial (dedupe_key IS NOT NULL) criada via SQL na migration
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id             String      @id @default(uuid()) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  userId         String?     @map("user_id") @db.Uuid
+  entity         String
+  entityId       String      @map("entity_id") @db.Uuid
+  action         AuditAction
+  oldData        Json?       @map("old_data")
+  newData        Json?       @map("new_data")
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, entity, entityId, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
+}
