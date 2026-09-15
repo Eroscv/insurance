@@ -7,13 +7,14 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
+import { SortableTableHead } from '@/components/ui/sortable-table-head';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { handleApiError } from '@/lib/handle-error';
 import { useDeleteDocument, useUpdateDocumentStatus, type Document } from '@/lib/queries/documents';
 import { DocumentStatusBadge } from './status-badges';
 import { DocumentViewer } from './document-viewer';
 
-export function DocumentList({ docs, showClient, showQuote, emptyAction }: { docs: Document[]; showClient?: boolean; showQuote?: boolean; emptyAction?: React.ReactNode }) {
+export function DocumentList({ docs, showClient, showQuote, emptyAction, sort, onSort }: { docs: Document[]; showClient?: boolean; showQuote?: boolean; emptyAction?: React.ReactNode; sort?: string; onSort?: (sort: string) => void }) {
   const [viewing, setViewing] = useState<Document | null>(null);
   const [deleting, setDeleting] = useState<Document | null>(null);
   const updateStatus = useUpdateDocumentStatus();
@@ -35,12 +36,12 @@ export function DocumentList({ docs, showClient, showQuote, emptyAction }: { doc
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Tipo</TableHead>
+            {onSort ? <SortableTableHead sortKey="type" sort={sort} onSort={onSort}>Tipo</SortableTableHead> : <TableHead>Tipo</TableHead>}
             <TableHead>Arquivo</TableHead>
             {showClient ? <TableHead>Cliente</TableHead> : null}
             {showQuote ? <TableHead>Cotação</TableHead> : null}
-            <TableHead>Status</TableHead>
-            <TableHead>Enviado</TableHead>
+            {onSort ? <SortableTableHead sortKey="status" sort={sort} onSort={onSort}>Status</SortableTableHead> : <TableHead>Status</TableHead>}
+            {onSort ? <SortableTableHead sortKey="uploadedAt" sort={sort} onSort={onSort} defaultDirection="desc">Enviado</SortableTableHead> : <TableHead>Enviado</TableHead>}
             <TableHead className="w-40" />
           </TableRow>
         </TableHeader>

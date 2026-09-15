@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Pagination } from '@/components/ui/pagination';
 import { Select } from '@/components/ui/select';
 import { TableSkeleton } from '@/components/ui/skeleton';
+import { SortableTableHead } from '@/components/ui/sortable-table-head';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuotes, type QuoteFilters as Filters } from '@/lib/queries/quotes';
 
@@ -40,12 +41,6 @@ function QuotesList() {
           <option value="closed">Encerradas</option>
           <option value="all">Todas</option>
         </Select>
-        <Select value={filters.sort ?? 'createdAt:desc'} onChange={(e) => setFilters({ ...filters, sort: e.target.value })} className="w-48">
-          <option value="createdAt:desc">Mais recentes</option>
-          <option value="lastActivityAt:asc">Sem atividade há mais tempo</option>
-          <option value="quoteNumber:asc">Número crescente</option>
-          <option value="priority:desc">Prioridade</option>
-        </Select>
       </div>
       {isLoading ? (
         <TableSkeleton cols={7} />
@@ -56,14 +51,14 @@ function QuotesList() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nº</TableHead>
+                <SortableTableHead sortKey="quoteNumber" sort={filters.sort} onSort={(sort) => setFilters({ ...filters, sort, page: 1 })}>Nº</SortableTableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Veículo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Prioridade</TableHead>
+                <SortableTableHead sortKey="status" sort={filters.sort} onSort={(sort) => setFilters({ ...filters, sort, page: 1 })}>Status</SortableTableHead>
+                <SortableTableHead sortKey="priority" sort={filters.sort} onSort={(sort) => setFilters({ ...filters, sort, page: 1 })} defaultDirection="desc">Prioridade</SortableTableHead>
                 <TableHead>Corretor</TableHead>
                 <TableHead>Seguradoras</TableHead>
-                <TableHead>Atividade</TableHead>
+                <SortableTableHead sortKey="lastActivityAt" sort={filters.sort} onSort={(sort) => setFilters({ ...filters, sort, page: 1 })}>Atividade</SortableTableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

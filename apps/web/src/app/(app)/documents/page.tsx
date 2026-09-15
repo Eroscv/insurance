@@ -14,7 +14,8 @@ export default function DocumentsPage() {
   const [status, setStatus] = useState<DocumentStatus | ''>('');
   const [type, setType] = useState<DocumentType | ''>('');
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useDocuments({ search, status: status || undefined, type: type || undefined, page, pageSize: 20 });
+  const [sort, setSort] = useState('uploadedAt:desc');
+  const { data, isLoading } = useDocuments({ search, status: status || undefined, type: type || undefined, page, pageSize: 20, sort });
   return (
     <>
       <PageHeader title="Documentos" description="Todos os arquivos recebidos, por cliente e cotação." />
@@ -29,7 +30,7 @@ export default function DocumentsPage() {
           {DOCUMENT_TYPE_VALUES.map((t) => <option key={t} value={t}>{DOCUMENT_TYPE_LABELS[t]}</option>)}
         </Select>
       </div>
-      {isLoading ? <TableSkeleton cols={6} /> : <DocumentList docs={data?.data ?? []} showClient showQuote />}
+      {isLoading ? <TableSkeleton cols={6} /> : <DocumentList docs={data?.data ?? []} showClient showQuote sort={sort} onSort={(s) => { setSort(s); setPage(1); }} />}
       {data ? <Pagination meta={data.meta} onPageChange={setPage} /> : null}
     </>
   );

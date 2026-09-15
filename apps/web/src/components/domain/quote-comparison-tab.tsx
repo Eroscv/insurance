@@ -14,7 +14,7 @@ import type { QuoteDetail } from '@/lib/queries/quotes';
 import { cn } from '@/lib/utils';
 
 function Cell({ children, best, className }: { children: React.ReactNode; best?: boolean; className?: string }) {
-  return <td className={cn('border-b px-3 py-2 text-center align-middle text-sm', best && 'bg-emerald-50 font-semibold text-emerald-800', className)}>{children}</td>;
+  return <td className={cn('border-b px-3 py-2 text-center align-middle text-sm', best && 'bg-emerald-50 font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400', className)}>{children}</td>;
 }
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (

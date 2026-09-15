@@ -16,6 +16,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { TableSkeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { SortableTableHead } from '@/components/ui/sortable-table-head';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { handleApiError } from '@/lib/handle-error';
 import { useMe } from '@/lib/queries/auth';
@@ -25,7 +26,8 @@ export default function UsersPage() {
   const { data: me } = useMe();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useUsers({ search, page, pageSize: 20 });
+  const [sort, setSort] = useState('name:asc');
+  const { data, isLoading } = useUsers({ search, page, pageSize: 20, sort });
   const setActive = useSetUserActive();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
@@ -49,9 +51,9 @@ export default function UsersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>E-mail</TableHead>
-                <TableHead>Perfil</TableHead>
+                <SortableTableHead sortKey="name" sort={sort} onSort={(s) => { setSort(s); setPage(1); }}>Nome</SortableTableHead>
+                <SortableTableHead sortKey="email" sort={sort} onSort={(s) => { setSort(s); setPage(1); }}>E-mail</SortableTableHead>
+                <SortableTableHead sortKey="role" sort={sort} onSort={(s) => { setSort(s); setPage(1); }}>Perfil</SortableTableHead>
                 <TableHead>Ativo</TableHead>
                 <TableHead className="w-24" />
               </TableRow>

@@ -18,6 +18,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { SearchInput } from '@/components/ui/search-input';
 import { TableSkeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { SortableTableHead } from '@/components/ui/sortable-table-head';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { handleApiError } from '@/lib/handle-error';
@@ -32,7 +33,8 @@ export default function InsurersPage() {
   const isAdmin = me?.role === 'ADMIN';
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useInsurers({ search, page, pageSize: 20 });
+  const [sort, setSort] = useState('name:asc');
+  const { data, isLoading } = useInsurers({ search, page, pageSize: 20, sort });
   const [editing, setEditing] = useState<InsurerRow | null | 'new'>(null);
   const [deleting, setDeleting] = useState<InsurerRow | null>(null);
   const del = useDeleteInsurer();
@@ -49,7 +51,7 @@ export default function InsurersPage() {
       ) : (
         <>
           <Table>
-            <TableHeader><TableRow><TableHead>Seguradora</TableHead><TableHead>Contato</TableHead><TableHead className="text-center">Consultas</TableHead><TableHead>Ativa</TableHead>{isAdmin ? <TableHead className="w-32" /> : null}</TableRow></TableHeader>
+            <TableHeader><TableRow><SortableTableHead sortKey="name" sort={sort} onSort={(s) => { setSort(s); setPage(1); }}>Seguradora</SortableTableHead><TableHead>Contato</TableHead><TableHead className="text-center">Consultas</TableHead><TableHead>Ativa</TableHead>{isAdmin ? <TableHead className="w-32" /> : null}</TableRow></TableHeader>
             <TableBody>
               {data.data.map((i) => (
                 <TableRow key={i.id}>

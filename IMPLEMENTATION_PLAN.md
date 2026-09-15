@@ -382,6 +382,13 @@ Adicionada após o MVP, a pedido do usuário ("cálculos automáticos de todos o
 - Dashboard (`/dashboard/summary`): bloco `financial` (prêmio e comissão realizados no mês, receita projetada do pipeline — comissão estimada de propostas selecionadas em cotações ainda abertas —, meta mensal e progresso), `monthlyEvolution` (prêmio fechado nos últimos 6 meses) e `brokerRanking` (ranking de corretores no mês, visível apenas para ADMIN/MANAGER).
 - Todos os cálculos continuam determinísticos (regras matemáticas), sem IA.
 
+## Fase 10 (incremental, pós-MVP): modo escuro e ordenação por cabeçalho
+
+Melhorias de UX pedidas pelo usuário após revisão do produto.
+
+- **Modo escuro**: paleta `.dark` completa em `globals.css` (Tailwind v4 `@custom-variant dark`), toggle de 3 estados (Claro/Escuro/Sistema) em `components/layout/theme-toggle.tsx`, persistido em `localStorage` e aplicado antes da hidratação via script inline em `layout.tsx` (evita flash do tema errado). Badges e alertas com cores fixas (`bg-emerald-50`, `bg-amber-50` etc.) ganharam variantes `dark:` para manter contraste.
+- **Ordenação por cabeçalho**: `components/ui/sortable-table-head.tsx` (genérico, reaproveita o estado `sort` "campo:direção" já usado pelas listagens). Aplicado em Clientes, Cotações, Usuários, Documentos e Seguradoras, substituindo os `Select` de ordenação onde redundantes.
+
 ## Futuro (não implementar agora)
 
 WhatsApp Business API (gerar mensagens prontas já existe como texto copiável) · e-mail SMTP real (trocar `MailerService` stub) · APIs de seguradoras (interface `InsurerGateway` por seguradora, entrada manual permanece como fallback) · importação de planilhas (`ImportJob` com etapas upload → leitura → preview → validação → erros → confirmação → importação) · webhooks de saída · gateway de pagamento/assinatura do SaaS · portal do cliente · outros tipos de seguro (tabelas `quote_<tipo>_details`).

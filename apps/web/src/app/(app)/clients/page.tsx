@@ -15,6 +15,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { TableSkeleton } from '@/components/ui/skeleton';
+import { SortableTableHead } from '@/components/ui/sortable-table-head';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { handleApiError } from '@/lib/handle-error';
 import { useClients, useCreateClient } from '@/lib/queries/clients';
@@ -38,11 +39,6 @@ export default function ClientsPage() {
           <option value="">Todos os tipos</option>
           {CLIENT_TYPE_VALUES.map((t) => <option key={t} value={t}>{CLIENT_TYPE_LABELS[t]}</option>)}
         </Select>
-        <Select value={sort} onChange={(e) => setSort(e.target.value)} className="sm:w-44">
-          <option value="name:asc">Nome A–Z</option>
-          <option value="name:desc">Nome Z–A</option>
-          <option value="createdAt:desc">Mais recentes</option>
-        </Select>
       </div>
       {isLoading ? (
         <TableSkeleton cols={6} />
@@ -53,7 +49,7 @@ export default function ClientsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Cliente</TableHead>
+                <SortableTableHead sortKey="name" sort={sort} onSort={(s) => { setSort(s); setPage(1); }}>Cliente</SortableTableHead>
                 <TableHead>CPF/CNPJ</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead className="text-center">Cotações</TableHead>

@@ -86,7 +86,7 @@ export function QuoteStatusDialog({ quote, role, target, onOpenChange }: Props) 
               <Textarea id="rs" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
             </FormField>
           ) : null}
-          {check && !check.ok ? <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">{check.reason}</p> : null}
+          {check && !check.ok ? <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-400">{check.reason}</p> : null}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
