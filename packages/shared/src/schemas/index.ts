@@ -5,3 +5,5 @@ export * from './user';
 export * from './client';
 export * from './vehicle';
 export * from './document';
+export * from './quote';
+export * from './insurer';

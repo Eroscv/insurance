@@ -22,6 +22,8 @@ import { UsersModule } from './modules/users/users.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { QuotesModule } from './modules/quotes/quotes.module';
+import { InsurersModule } from './modules/insurers/insurers.module';
 
 @Module({
   imports: [
@@ -58,6 +60,8 @@ import { DocumentsModule } from './modules/documents/documents.module';
     ClientsModule,
     VehiclesModule,
     DocumentsModule,
+    QuotesModule,
+    InsurersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
