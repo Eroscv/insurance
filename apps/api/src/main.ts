@@ -26,7 +26,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
   await configureApp(app);
-  const port = app.get(ConfigService<Env, true>).get('API_PORT', { infer: true });
+  // Plataformas como Render injetam PORT e esperam que o app escute nela; API_PORT continua
+  // valendo para desenvolvimento local, onde PORT normalmente não está definida.
+  const port = Number(process.env.PORT) || app.get(ConfigService<Env, true>).get('API_PORT', { infer: true });
   await app.listen(port);
   app.get(Logger).log(`API em http://localhost:${port}/api/v1`);
 }
