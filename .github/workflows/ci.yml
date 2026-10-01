@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# `main` tem auto-deploy para Render e Vercel: cancelar execuções antigas do mesmo
+# ref evita que um commit mais novo seja validado depois de um mais antigo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: lint · typecheck · test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # O teste do PDF da proposta gera o arquivo de verdade (Puppeteer), então o
+      # Chromium é baixado no install. Cachear evita ~150 MB por execução.
+      - name: Cache do Chromium do Puppeteer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      # Reaproveita o compose do projeto em vez de redeclarar os serviços aqui:
+      # o Postgres já cria o banco `insurance_test` via docker/postgres-init.sql e o
+      # minio-init cria o bucket. As portas (5433 e 9000) são as mesmas do dev, então
+      # os defaults de .env.example valem sem ajuste.
+      - name: Subir Postgres e MinIO
+        run: |
+          cp .env.example .env
+          docker compose up -d --wait postgres minio
+          docker compose run --rm minio-init
+
+      # postinstall roda `prisma generate` e compila packages/shared e packages/database.
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      # Os testes de integração aplicam as migrations em insurance_test por conta
+      # própria (apps/api/test/app.factory.ts).
+      - run: npm test
+
+      - name: Logs dos serviços (em caso de falha)
+        if: failure()
+        run: docker compose logs --no-color --tail 50 postgres minio
