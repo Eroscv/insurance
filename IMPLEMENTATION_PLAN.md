@@ -406,6 +406,137 @@ fixas em hexadecimal/oklch, corretas apenas no tema claro. Substituídas por `va
 tooltip. Como são propriedades SVG/inline style, o navegador resolve o `var()` no momento da
 pintura, então os gráficos acompanham a troca de tema automaticamente, sem re-render em JS.
 
+## Fase 13 (incremental, pós-MVP): apólices e renovação
+
+Fecha o ciclo do negócio. Hoje a cotação termina em `WON` e o dado morre: não há registro do que foi
+vendido, nem vigência, nem gatilho de renovação — e renovação é a receita recorrente da corretora.
+O campo `quotes.expiring_premium` (Fase 9) existe mas é digitado à mão; com apólices ele passa a ser
+preenchido automaticamente pelo ciclo de renovação.
+
+### B4.1 Modelo de dados
+
+`enum PolicyStatus { ACTIVE, EXPIRED, CANCELLED, RENEWED }` — "vencendo" **não** é status persistido:
+é derivado de `end_date` vs. hoje, no mesmo padrão de "tarefa atrasada" (BUSINESS_RULES §11).
+
+### policies
+| coluna | tipo | obs |
+|---|---|---|
+| id | uuid PK | |
+| organization_id | uuid FK | tenant |
+| policy_number | text | número da seguradora, digitado |
+| client_id | uuid FK | |
+| vehicle_id | uuid FK? | |
+| insurer_id | uuid FK | |
+| quote_id | uuid FK? unique | cotação que originou |
+| proposal_id | uuid FK? unique | proposta aceita (fonte dos valores) |
+| assigned_user_id | uuid FK? | responsável pela carteira |
+| insurance_type | InsuranceType default AUTO | |
+| status | PolicyStatus default ACTIVE | |
+| start_date, end_date | date | vigência |
+| premium | numeric(12,2) | prêmio total |
+| installments | int default 1 | |
+| installment_amount | numeric(12,2)? | obrigatório se `installments > 1` |
+| commission_percentage | numeric(5,2)? | senão usa o padrão da organização |
+| renewed_from_id | uuid FK? | apólice anterior (auto-relação) |
+| renewal_quote_id | uuid FK? | cotação de renovação gerada |
+| cancelled_at | timestamptz? | |
+| cancel_reason | text? | |
+| notes | text? | |
+| deleted_at | timestamptz? | soft delete |
+| created_at, updated_at | timestamptz | |
+
+Índices: unique parcial `(organization_id, insurer_id, policy_number) where deleted_at is null`;
+`(organization_id, status, end_date)`, `(organization_id, end_date)`, `(organization_id, client_id)`,
+`(organization_id, assigned_user_id)`.
+
+Relações novas em `Organization`, `Client`, `Vehicle`, `Insurer`, `User`, `Quote`, `Proposal`.
+`'Policy'` entra em `TENANT_MODELS` **e** `SOFT_DELETE_MODELS` (`infra/prisma/tenant-extension.ts`).
+
+Novos campos/valores:
+- `organization_settings.renewal_notice_days int default 45` — antecedência do gatilho de renovação.
+- `NotificationType` += `POLICY_EXPIRING` (schema, `shared/enums.ts`, `shared/labels.ts`).
+
+### Regras de negócio
+
+1. **WON não cria apólice automaticamente.** Número e vigência só existem depois da emissão pela
+   seguradora; gerá-los seria inventar dado (mesma razão que barrou tendência nos KPIs de contagem na
+   Fase 11). Em vez disso, `applyStatus` → `WON` cria **tarefa** "Cadastrar apólice da cotação #N"
+   para o responsável, e o formulário de apólice é pré-preenchido a partir da proposta `SELECTED`
+   (seguradora, prêmio, parcelas, comissão, cliente, veículo) via `GET /policies/prefill/:quoteId`.
+2. `end_date > start_date`; default de `end_date` = `start_date + 1 ano` (editável).
+3. `policy_number` único por seguradora dentro da organização (entre não excluídas) → 409 com link
+   para a existente, igual ao CPF/CNPJ duplicado de clientes.
+4. **Cancelamento**: `CANCELLED` + `cancelled_at` + `cancel_reason`; a tela exibe a estimativa de
+   devolução usando `proRataPremium` (já existe em `calculations/financial.ts`).
+5. **Renovação** cria uma `Quote` nova — não edita a apólice: mesmo cliente, veículo, tipo e
+   responsável, `status NEW`, `expiring_premium = policy.premium`, nota "Renovação da apólice X".
+   Grava `policy.renewal_quote_id`. Quando a cotação de renovação fecha em `WON` e a nova apólice é
+   cadastrada com `renewed_from_id`, a anterior vai para `RENEWED`.
+6. **Idempotência do ciclo**: `renewal_quote_id IS NULL` é a própria chave — não precisa de
+   `dedupe_key`. Rodar o job duas vezes no mesmo dia gera uma única cotação.
+7. **RBAC**: CRUD sob `OPERATE`; BROKER só edita apólices sem responsável ou atribuídas a si
+   (`canEditPolicy`, delegando ao mesmo `QUOTES_EDIT_ANY` já existente — sem nova permissão);
+   exclusão exige `RECORDS_DELETE`.
+8. Toda mutação registra `audit_logs`.
+
+### Jobs (`infra/scheduler/jobs.service.ts`)
+
+| Job | Cron | Regra |
+|---|---|---|
+| expiringPolicies | diário 07:10 | `ACTIVE`, `end_date = hoje + renewal_notice_days`, `renewal_quote_id IS NULL` → cria cotação de renovação + notificação `POLICY_EXPIRING` + tarefa "Renovar apólice X" |
+| expirePolicies | diário 07:15 | `ACTIVE` e `end_date < hoje` → `EXPIRED` (`updateMany`, no padrão do `expiringProposals`) |
+
+### Contratos de API (`/api/v1/policies`)
+
+```
+POST   /policies                  criar
+GET    /policies                  lista: status, clientId, insurerId, assignedUserId,
+                                  expiringInDays, vigência (período), q, sort, page
+GET    /policies/:id              detalhe (+ cadeia de renovações via renewed_from_id)
+PATCH  /policies/:id              editar
+POST   /policies/:id/cancel       { cancelReason } → CANCELLED + estimativa pro-rata
+POST   /policies/:id/renew        cria a cotação de renovação manualmente (mesmo service do cron)
+DELETE /policies/:id              soft delete (RECORDS_DELETE)
+GET    /policies/expiring?days=30 para o dashboard
+GET    /policies/prefill/:quoteId payload da proposta SELECTED para o formulário
+```
+
+### `packages/shared`
+
+- `schemas/policy.ts`: `createPolicySchema`, `updatePolicySchema`, `listPoliciesQuery`, `cancelPolicySchema`.
+- `policies/renewal.ts` (puras, testadas): `daysToExpiry`, `isExpiring`, `defaultEndDate`,
+  `canCancel`, `retentionRate`.
+- Reaproveita `proRataPremium` (cancelamento) e `renewalComparison` (economia na renovação).
+
+### Dashboard
+
+Novos indicadores, todos derivados de dado real: apólices vigentes, vencendo em 30 dias, prêmio da
+carteira (soma dos `ACTIVE`) e **taxa de retenção** no período — cotações de renovação fechadas em
+`WON` sobre o total já decidido (`WON` + `LOST`), sem projetar as ainda abertas.
+
+### Frontend
+
+- `/policies` — listagem com `SortableTableHead` e filtros no padrão das outras listas.
+- `/policies/new` — formulário; aceita `?quoteId=` para pré-preencher.
+- `/policies/[id]` — vigência com contagem de dias, cadeia de renovações, ações editar/cancelar/renovar.
+- `/policies/renewals` — visão agrupada por faixa de vencimento (0–30, 31–60, 61–90 dias).
+- Aba "Apólices" no detalhe do cliente; card "Apólice" no detalhe da cotação `WON` (link ou botão
+  "Cadastrar apólice"); item "Apólices" na sidebar.
+
+### Migration, seed e testes
+
+- `prisma migrate dev --name add_policies`.
+- Seed: 3 apólices vigentes (uma vencendo dentro da janela, para exercitar o cron), 1 `EXPIRED` e
+  1 `RENEWED` — idempotente, sem dados reais.
+- `packages/shared`: `policies/renewal.spec.ts`.
+- `apps/api/test/policies.spec.ts`: CRUD, isolamento de tenant, unicidade do número, BROKER vs.
+  MANAGER, cancelamento com pro-rata, renovação gerando cotação com `expiring_premium`.
+- `tasks-jobs.spec.ts`: rodar `expiringPolicies` duas vezes gera **uma** cotação; `expirePolicies`
+  não toca em `CANCELLED`/`RENEWED`.
+- E2E: `WON` → cadastrar apólice → renovar → cotação de renovação aparece no pipeline.
+
+Continua 100% determinístico: CRUD, datas e cron. Sem IA.
+
 ## Futuro (não implementar agora)
 
 WhatsApp Business API (gerar mensagens prontas já existe como texto copiável) · e-mail SMTP real (trocar `MailerService` stub) · APIs de seguradoras (interface `InsurerGateway` por seguradora, entrada manual permanece como fallback) · importação de planilhas (`ImportJob` com etapas upload → leitura → preview → validação → erros → confirmação → importação) · webhooks de saída · gateway de pagamento/assinatura do SaaS · portal do cliente · outros tipos de seguro (tabelas `quote_<tipo>_details`).
